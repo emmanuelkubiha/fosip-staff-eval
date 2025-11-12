@@ -60,7 +60,7 @@ tmp/
 # ========================================
 # Inclure tous les fichiers du dossier racine sauf ceux ignorés ci-dessus
 # ========================================
-!/*
+#!/*
 
 # ========================================
 # Inclure explicitement la licence
