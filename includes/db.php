@@ -1,21 +1,21 @@
 <?php
 /**
  * Connexion à la base de données
- * Utilise config.php pour les identifiants (non versionné)
+ * Utilise includes/config.php pour les identifiants (non versionné)
  */
 
-// Charger la configuration depuis config.php (hors Git)
-$configPath = __DIR__ . '/../config.php';
+// Nouveau chemin pour config.php
+$configPath = __DIR__ . '/config.php';
 
 if (file_exists($configPath)) {
-    // Environnement de production (config.php existe)
+    // Utiliser la config personnalisée (production ou local)
     $config = require $configPath;
-    $host = $config['host'];
-    $dbname = $config['dbname'];
-    $username = $config['username'];
-    $password = $config['password'];
+    $host = $config['host'] ?? 'localhost';
+    $dbname = $config['dbname'] ?? 'fosip_eval';
+    $username = $config['username'] ?? 'root';
+    $password = $config['password'] ?? '';
 } else {
-    // Environnement de développement local (fallback)
+    // Fallback : paramètres par défaut pour localhost
     $host = 'localhost';
     $dbname = 'fosip_eval';
     $username = 'root';
@@ -33,10 +33,7 @@ try {
             PDO::ATTR_EMULATE_PREPARES => false
         ]
     );
-    
-    // Définir le fuseau horaire (RDC = UTC+1 ou UTC+2 selon la région)
     date_default_timezone_set('Africa/Kinshasa');
-    
 } catch (PDOException $e) {
     // En production : ne pas afficher les détails de l'erreur
     if ($_SERVER['HTTP_HOST'] !== 'localhost' && $_SERVER['HTTP_HOST'] !== '127.0.0.1') {

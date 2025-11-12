@@ -60,7 +60,7 @@ tmp/
 # ========================================
 # Inclure tous les fichiers du dossier racine sauf ceux ignorés ci-dessus
 # ========================================
-#!/*
+!/*
 
 # ========================================
 # Inclure explicitement la licence
@@ -72,4 +72,3 @@ tmp/
 # ========================================
 !pages/
 !bd/
-config.php    # ❌ Ne JAMAIS versionner ce fichier (contient mots de passe DB)
