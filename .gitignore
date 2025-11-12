@@ -72,3 +72,4 @@ tmp/
 # ========================================
 !pages/
 !bd/
+config.php    # ❌ Ne JAMAIS versionner ce fichier (contient mots de passe DB)
