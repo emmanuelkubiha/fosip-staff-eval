@@ -66,3 +66,9 @@ tmp/
 # Inclure explicitement la licence
 # ========================================
 !LICENSE.md
+
+# ========================================
+# Inclure explicitement le dossier pages et bd
+# ========================================
+!pages/
+!bd/
