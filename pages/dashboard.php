@@ -627,13 +627,16 @@ elseif ($role === 'admin') {
 }
 
 ?>
-<!-- Interface HTML -->
+<!-- Inclure le sidebar offcanvas en dehors de la grille principale -->
+<?php include('../includes/sidebar.php'); ?>
+
 <div class="container-fluid">
   <div class="row">
     <div class="col-lg-3 col-xl-3 d-none d-lg-block">
-      <?php include('../includes/sidebar.php'); ?>
+      <!-- Sidebar desktop uniquement -->
+      <!-- (Ne pas inclure sidebar.php ici, déjà inclus au-dessus) -->
     </div>
-    <div class="col-12 col-lg-9 col-xl-9 p-4">
+    <div class="col-12 col-lg-9 col-xl-9 p-4 dashboard-main">
 
       <!-- Synthèse nouvelle -->
       <div class="row g-3 mb-4">
@@ -717,16 +720,18 @@ elseif ($role === 'admin') {
         <div class="col-md-12">
           <div class="card shadow-sm border-0" style="background: linear-gradient(45deg, #3D74B9, #4d8cd6);">
             <div class="card-body p-4">
-              <div class="d-flex align-items-center">
-                <div class="me-4">
+              <div class="row align-items-center">
+                <!-- Avatar centré sur mobile -->
+                <div class="col-12 col-sm-auto d-flex justify-content-center mb-2 mb-sm-0">
                   <div class="d-flex align-items-center justify-content-center bg-white rounded-circle"
                        style="width:80px;height:80px;">
                     <i class="bi bi-person-fill" style="font-size:32px;color: #3D74B9;"></i>
                   </div>
                 </div>
-                <div class="flex-grow-1 text-white">
-                  <h2 class="display-6 fw-bold mb-1">Bienvenue, <?= htmlspecialchars($nom . ' ' . $postnom) ?></h2>
-                  <div class="d-flex flex-wrap gap-3 mt-2">
+                <!-- Texte principal centré sur mobile -->
+                <div class="col-12 col-sm flex-grow-1 text-white text-center text-sm-start">
+                  <h2 class="display-6 fw-bold mb-2">Bienvenue, <?= htmlspecialchars($nom . ' ' . $postnom) ?></h2>
+                  <div class="d-flex flex-column flex-sm-row gap-2 mt-2 align-items-center align-items-sm-start justify-content-center justify-content-sm-start">
                     <div class="d-flex align-items-center">
                       <div class="rounded-pill px-3 py-1" style="background: rgba(255, 255, 255, 0.1);">
                         <i class="bi bi-person-badge-fill me-2"></i>
@@ -741,7 +746,8 @@ elseif ($role === 'admin') {
                     </div>
                   </div>
                 </div>
-                <div class="ms-auto text-white text-end">
+                <!-- Infos date/heure centrées sur mobile -->
+                <div class="col-12 col-sm-auto text-white text-center text-sm-end mt-3 mt-sm-0">
                   <p class="mb-1"><?= date('d/m/Y') ?></p>
                   <p class="small mb-0">Dernière connexion : <?= date('H:i') ?></p>
                 </div>
@@ -1012,5 +1018,113 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
+
+<style>
+/* Fond dégradé sur la zone dashboard */
+.dashboard-main {
+  background: linear-gradient(135deg, #e8f2f9 0%, #fef5ed 100%);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+/* Cartes modernisées */
+.card {
+  border-radius: 18px !important;
+  box-shadow: 0 6px 32px rgba(61, 116, 185, 0.10), 0 1.5px 8px rgba(245, 199, 165, 0.08);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.card:hover {
+  box-shadow: 0 12px 40px rgba(61, 116, 185, 0.18), 0 2px 12px rgba(245, 199, 165, 0.12);
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Titres modernisés */
+.card-title, h5, h6 {
+  font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Badges stylés */
+.badge {
+  border-radius: 16px !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.5em 1em;
+  box-shadow: 0 2px 8px rgba(61, 116, 185, 0.08);
+}
+
+/* Animation chiffres clés */
+.h4, .h5, .h3, .display-6 {
+  animation: keyPulse 1.2s cubic-bezier(0.4,0,0.2,1) 1;
+}
+@keyframes keyPulse {
+  0% { opacity: 0.5; transform: scale(0.95);}
+  60% { opacity: 1; transform: scale(1.08);}
+  100% { opacity: 1; transform: scale(1);}
+}
+
+/* Boutons modernisés */
+.btn, .btn-outline-primary, .btn-primary {
+  border-radius: 12px !important;
+  font-weight: 600;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.btn:hover, .btn-outline-primary:hover, .btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(61, 116, 185, 0.12);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Progress bars stylées */
+.progress-bar {
+  border-radius: 8px !important;
+  box-shadow: 0 1px 6px rgba(61, 116, 185, 0.08);
+}
+
+/* Section d'en-tête dashboard */
+.card[style*="linear-gradient"] {
+  border-radius: 24px !important;
+  box-shadow: 0 8px 32px rgba(61, 116, 185, 0.18), 0 2px 12px rgba(245, 199, 165, 0.12);
+}
+
+/* Section bienvenue vraiment responsive */
+@media (max-width: 575.98px) {
+  .card[style*="linear-gradient"] .rounded-circle {
+    width: 54px !important;
+    height: 54px !important;
+  }
+  .card[style*="linear-gradient"] .display-6 {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.7rem !important;
+  }
+  .card[style*="linear-gradient"] .d-flex.flex-column {
+    gap: 0.6rem !important;
+  }
+  .card[style*="linear-gradient"] .text-sm-end {
+    text-align: center !important;
+    margin-top: 1rem !important;
+  }
+}
+
+/* Responsive padding */
+@media (max-width: 991px) {
+  .dashboard-main {
+    position: static !important;
+    z-index: auto !important;
+    background: #fff !important;
+  }
+  .offcanvas {
+    z-index: 1080 !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .dashboard-main {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+  }
+}
+</style>
 
 <?php include('../includes/footer.php'); ?>

@@ -10,31 +10,18 @@
 # Ce module permet de modifier les URLs avant qu'elles soient traitées
 RewriteEngine On
 
-# Condition : Si HTTPS est désactivé (connexion HTTP non sécurisée)
-# %{HTTPS} = variable Apache qui vaut 'on' (HTTPS actif) ou 'off' (HTTP)
+# Désactive la redirection HTTPS en local (décommente uniquement en production)
 # RewriteCond %{HTTPS} off
-
-# Action : Rediriger automatiquement vers HTTPS
-# ^(.*)$ = capture toute l'URL demandée
-# https://%{HTTP_HOST}%{REQUEST_URI} = reconstruit l'URL en HTTPS
-# [L,R=301] : L=Last (dernière règle), R=301 (redirection permanente)
-# Exemple : http://eval.fosip-drc.org/pages/login.php → https://eval.fosip-drc.org/pages/login.php
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # ========================================
 # Bloquer l'accès aux fichiers sensibles
 # ========================================
-# Empêche l'accès direct aux fichiers de configuration et de code source
-# FilesMatch = expression régulière pour cibler plusieurs fichiers
-# | = OU logique (ex: config.php OU .git OU .env)
-# $ = fin du nom de fichier (pour éviter de bloquer config.php.bak)
-<FilesMatch "(config\.php|\.git|\.env|\.gitignore|composer\.json|CHANGELOG\.md)$">
-    # Order allow,deny = d'abord autoriser, puis refuser (le deny prend priorité)
-    Order allow,deny
-    # Deny from all = refuse l'accès à tout le monde
-    # Résultat : Erreur 403 Forbidden si quelqu'un essaie d'accéder à config.php
-    Deny from all
-</FilesMatch>
+# Désactive le blocage en local (commente ce bloc)
+# <FilesMatch "(config\.php|\.git|\.env|\.gitignore|composer\.json|CHANGELOG\.md)$">
+#     Order allow,deny
+#     Deny from all
+# </FilesMatch>
 
 # ========================================
 # Désactiver le listing des répertoires

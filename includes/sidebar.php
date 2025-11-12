@@ -161,6 +161,8 @@ function isActive($page) {
     overflow-y: auto;
     overflow-x: hidden;
     min-width: 300px; /* Largeur minimale augmentée de 280px à 300px */
+    width: 300px;        /* Limite la largeur à gauche */
+    max-width: 300px;    /* Empêche le débordement sur desktop */
   }
   
   /* Scrollbar personnalisée */
@@ -537,6 +539,10 @@ function isActive($page) {
     padding: 1.5rem;
     display: block; /* Visible dans l'offcanvas */
   }
+  
+  .offcanvas.offcanvas-sidebar {
+    z-index: 1080 !important;
+  }
 </style>
 
 <!-- Sidebar Desktop (visible sur écrans larges) -->
@@ -845,6 +851,26 @@ document.addEventListener('DOMContentLoaded', function() {
       // Si le sous-menu est ouvert (page active dedans), marquer le parent comme actif
       link.classList.add('active');
     }
+  });
+});
+
+// Correction navigation offcanvas mobile : redirige après fermeture
+document.addEventListener('DOMContentLoaded', function() {
+  var sidebarOffcanvas = document.getElementById('sidebarMobile');
+  if (!sidebarOffcanvas) return;
+
+  sidebarOffcanvas.querySelectorAll('a[data-bs-dismiss="offcanvas"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var href = link.getAttribute('href');
+      if (href && href !== '#' && href !== 'javascript:void(0)') {
+        e.preventDefault();
+        var offcanvas = bootstrap.Offcanvas.getOrCreateInstance(sidebarOffcanvas);
+        offcanvas.hide();
+        setTimeout(function() {
+          window.location.href = href;
+        }, 350); // délai pour laisser le menu se fermer
+      }
+    });
   });
 });
 </script>

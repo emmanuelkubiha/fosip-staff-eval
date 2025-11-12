@@ -11,13 +11,13 @@ if (file_exists($configPath)) {
     // Utiliser la config personnalisée (production ou local)
     $config = require $configPath;
     $host = $config['host'] ?? 'localhost';
-    $dbname = $config['dbname'] ?? 'fosip_eval';
+    $dbname = $config['dbname'] ?? 'fosip_evaluation';
     $username = $config['username'] ?? 'root';
     $password = $config['password'] ?? '';
 } else {
     // Fallback : paramètres par défaut pour localhost
     $host = 'localhost';
-    $dbname = 'fosip_eval';
+    $dbname = 'fosip_evaluation';
     $username = 'root';
     $password = '';
 }

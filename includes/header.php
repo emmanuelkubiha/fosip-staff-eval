@@ -296,10 +296,597 @@
       text-decoration: none;
     }
     
+    /* Branding modernisé et encore plus léger */
     .logo-fosip {
-      height: 42px;
+      height: 28px !important;
       width: auto;
-      filter: brightness(1.1);
+      box-shadow: 0 0 8px #3D74B955;
+      transition: box-shadow 0.2s;
+    }
+    
+    .logo-fosip:hover {
+      box-shadow: 0 0 16px #3D74B9aa;
+    }
+    
+    .brand-main-title {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      font-size: 1.18rem !important;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 1.2px;
+      line-height: 1.05;
+      text-shadow: 0 2px 10px #3D74B9;
+      filter: drop-shadow(0 0 2px #4d8cd6);
+    }
+    
+    .brand-subtitle {
+      font-size: 0.68rem !important;
+      color: #e9ecef !important;
+      font-weight: 400;
+      letter-spacing: 0.4px;
+      margin-top: 1px;
+      opacity: 0.85;
+    }
+    
+    @media (max-width: 575.98px) {
+      .brand-subtitle {
+        display: none !important;
+        /* ou font-size: 0.48rem !important; si tu veux juste la rendre minuscule */
+      }
+      .brand-main-title {
+        font-size: 0.85rem !important;
+        letter-spacing: 0.7px !important;
+      }
+      .logo-fosip {
+        height: 16px !important;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .brand-main-title { font-size: 0.98rem !important; }
+      .brand-subtitle { font-size: 0.58rem !important; }
+      .logo-fosip { height: 20px !important; }
+    }
+    
+    /* Profil utilisateur dans le header */
+    .user-profile-dropdown {
+      position: relative;
+    }
+    
+    .profile-trigger {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .profile-trigger:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    
+    .profile-avatar-header {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .profile-info-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      text-align: left;
+    }
+    
+    .profile-name-header {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: white;
+      line-height: 1.2;
+      margin: 0;
+    }
+    
+    .profile-role-header {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.8);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+      line-height: 1;
+    }
+    
+    .profile-chevron {
+      color: white;
+      transition: transform 0.3s ease;
+      font-size: 0.9rem;
+    }
+    
+    .profile-trigger:hover .profile-chevron {
+      transform: rotate(180deg);
+    }
+    
+    
+    /* Conteneur du texte de branding */
+    .brand-text-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    
+    .brand-main-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: white;
+      line-height: 1.2;
+      letter-spacing: 0.3px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      background: linear-gradient(135deg, #ffffff 0%, rgba(245,199,165,0.9) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+    }
+    
+    .brand-subtitle {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: rgba(245,199,165,0.95);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .brand-subtitle::before {
+      content: '';
+      width: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(245,199,165,0.8));
+      border-radius: 2px;
+    }
+    
+    /* Animation subtile du titre */
+    @keyframes titleShine {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.15); }
+    }
+    
+    .navbar-brand-fosip:hover .brand-main-title {
+      animation: titleShine 2s ease-in-out infinite;
+    }
+    
+    /* Dropdown menu stylé */
+    .dropdown-menu-fosip {
+      min-width: 280px;
+      padding: 0.5rem;
+      border: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      border-radius: 12px;
+      margin-top: 0.75rem;
+    }
+    
+    .dropdown-header-fosip {
+      padding: 0.85rem 1rem;
+      background: linear-gradient(135deg, rgba(61,116,185,0.15) 0%, rgba(42,90,148,0.15) 100%);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border-left: 3px solid #3D74B9;
+    }
+    
+    .dropdown-header-fosip .user-info-name {
+      font-weight: 600;
+      color: #3D74B9;
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .dropdown-header-fosip .user-info-email {
+      font-size: 0.75rem;
+      color: #6c757d;
+      margin-bottom: 0.25rem;
+    }
+    
+    .dropdown-header-fosip .user-info-fonction {
+      font-size: 0.7rem;
+      color: #6c757d;
+      opacity: 0.8;
+    }
+    
+    .dropdown-item-fosip {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+      color: #495057;
+      text-decoration: none;
+    }
+    
+    .dropdown-item-fosip:hover {
+      background: rgba(61,116,185,0.1);
+      color: #3D74B9;
+      transform: translateX(4px);
+    }
+    
+    .dropdown-item-fosip i {
+      font-size: 1.1rem;
+      width: 24px;
+      text-align: center;
+    }
+    
+    .dropdown-divider-fosip {
+      margin: 0.5rem 0;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    
+    .btn-menu-toggle {
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-menu-toggle:hover {
+      background: rgba(255,255,255,0.25);
+      border-color: rgba(255,255,255,0.5);
+      transform: translateY(-2px);
+    }
+    
+    /* Loader amélioré et moderne */
+    #page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #e8f2f9 0%, #ffffff 40%, #fef5ed 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    
+    #page-loader.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+    
+    .loader-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      animation: loaderFloat 3s ease-in-out infinite;
+    }
+    
+    @keyframes loaderFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* Double cercle tournant avec effet de profondeur */
+    .spinner-ring {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 5px solid transparent;
+      border-top-color: #3D74B9;
+      border-right-color: rgba(61, 116, 185, 0.3);
+      animation: spinRotate 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+      position: relative;
+      box-shadow: 0 0 30px rgba(61, 116, 185, 0.3);
+    }
+    
+    .spinner-ring::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      border-radius: 50%;
+      border: 5px solid transparent;
+      border-bottom-color: #F5C7A5;
+      border-left-color: rgba(245, 199, 165, 0.4);
+      animation: spinRotate 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
+    }
+    
+    .spinner-ring::after {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      bottom: 15px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: rgba(61, 116, 185, 0.5);
+      animation: spinRotate 2s linear infinite;
+    }
+    
+    /* Animation du cercle tournant */
+    @keyframes spinRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Logo centré avec effet de battement */
+    .logo-center {
+      position: absolute;
+      width: 75px;
+      height: 75px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      object-fit: cover;
+      background: white;
+      padding: 10px;
+      box-shadow: 
+        0 0 20px rgba(61, 116, 185, 0.4),
+        0 0 40px rgba(245, 199, 165, 0.3),
+        0 10px 30px rgba(0, 0, 0, 0.1);
+      animation: logoGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes logoGlow {
+      0%, 100% { 
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 
+          0 0 20px rgba(61, 116, 185, 0.4),
+          0 0 40px rgba(245, 199, 165, 0.3),
+          0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+      50% { 
+        transform: translate(-50%, -50%) scale(1.08);
+        box-shadow: 
+          0 0 30px rgba(61, 116, 185, 0.6),
+          0 0 60px rgba(245, 199, 165, 0.4),
+          0 15px 40px rgba(0, 0, 0, 0.15);
+      }
+    }
+    
+    /* Texte de chargement avec animation */
+    .loading-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #3D74B9;
+      letter-spacing: 2px;
+      position: relative;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .loading-text::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 30px;
+      height: 3px;
+      background: #3D74B9;
+      border-radius: 3px;
+      animation: loadingBar 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes loadingBar {
+      0%, 100% { 
+        width: 0;
+        opacity: 0;
+      }
+      50% { 
+        width: 30px;
+        opacity: 1;
+      }
+    }
+    
+    /* Points animés */
+    .loading-dots {
+      display: inline-flex;
+      gap: 8px;
+    }
+    
+    .loading-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: dotJump 1.4s ease-in-out infinite;
+    }
+    
+    .loading-dots span:nth-child(1) { animation-delay: 0s; }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes dotJump {
+      0%, 60%, 100% { 
+        transform: translateY(0) scale(1);
+        opacity: 0.7;
+      }
+      30% { 
+        transform: translateY(-15px) scale(1.2);
+        opacity: 1;
+      }
+    }
+    
+    /* Barre de progression élégante */
+    .progress-bar-loader {
+      width: 240px;
+      height: 6px;
+      background: rgba(61, 116, 185, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .progress-bar-loader::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(61, 116, 185, 0.5) 10%,
+        #3D74B9 40%,
+        #F5C7A5 60%,
+        rgba(245, 199, 165, 0.5) 90%,
+        transparent
+      );
+      animation: progressSlide 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      box-shadow: 0 0 15px rgba(61, 116, 185, 0.5);
+    }
+    
+    @keyframes progressSlide {
+      0% { left: -100%; }
+      100% { left: 200%; }
+    }
+    
+    /* Texte de sous-titre */
+    .loading-subtitle {
+      font-size: 0.9rem;
+      color: #8a6e5a; /* Couleur entre bleu et jaune */
+      font-weight: 500;
+      margin-top: -0.5rem;
+      animation: subtitleFade 2s ease-in-out infinite;
+    }
+    
+    @keyframes subtitleFade {
+      0%, 100% { opacity: 0.5; color: #3D74B9; }
+      50% { opacity: 1; color: #d4a574; }
+    }
+    
+    /* Particules décoratives FOSIP */
+    .loader-container::before,
+    .loader-container::after {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      animation: particleFloat 4s ease-in-out infinite;
+    }
+    
+    .loader-container::before {
+      top: -100px;
+      left: -100px;
+      background: radial-gradient(circle, rgba(61, 116, 185, 0.08) 0%, transparent 70%); /* Bleu */
+      animation-delay: 0s;
+    }
+    
+    .loader-container::after {
+      bottom: -100px;
+      right: -100px;
+      background: radial-gradient(circle, rgba(245, 199, 165, 0.08) 0%, transparent 70%); /* Jaune */
+      animation-delay: 2s;
+    }
+    
+    @keyframes particleFloat {
+      0%, 100% { 
+        transform: scale(1) translateY(0);
+        opacity: 0.4;
+      }
+      50% { 
+        transform: scale(1.2) translateY(-20px);
+        opacity: 0.7;
+      }
+    }
+    
+    /* Header moderne et stylé */
+    .navbar-fosip {
+      background: linear-gradient(135deg, #3D74B9 0%, #2a5a94 100%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 0.75rem 1rem;
+    }
+    
+    .navbar-brand-fosip {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: white !important;
+      text-decoration: none;
+      transition: transform 0.2s ease;
+    }
+    
+    .navbar-brand-fosip:hover {
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    
+    /* Branding modernisé et encore plus léger */
+    .logo-fosip {
+      height: 28px !important;
+      width: auto;
+      box-shadow: 0 0 8px #3D74B955;
+      transition: box-shadow 0.2s;
+    }
+    
+    .logo-fosip:hover {
+      box-shadow: 0 0 16px #3D74B9aa;
+    }
+    
+    .brand-main-title {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      font-size: 1.18rem !important;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 1.2px;
+      line-height: 1.05;
+      text-shadow: 0 2px 10px #3D74B9;
+      filter: drop-shadow(0 0 2px #4d8cd6);
+    }
+    
+    .brand-subtitle {
+      font-size: 0.68rem !important;
+      color: #e9ecef !important;
+      font-weight: 400;
+      letter-spacing: 0.4px;
+      margin-top: 1px;
+      opacity: 0.85;
+    }
+    
+    @media (max-width: 575.98px) {
+      .brand-subtitle {
+        display: none !important;
+        /* ou font-size: 0.48rem !important; si tu veux juste la rendre minuscule */
+      }
+      .brand-main-title {
+        font-size: 0.85rem !important;
+        letter-spacing: 0.7px !important;
+      }
+      .logo-fosip {
+        height: 16px !important;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .brand-main-title { font-size: 0.98rem !important; }
+      .brand-subtitle { font-size: 0.58rem !important; }
+      .logo-fosip { height: 20px !important; }
     }
     
     /* Profil utilisateur dans le header */
@@ -838,11 +1425,31 @@
 
       <!-- Logo et nom -->
         <!-- Logo et nom -->
-      <a class="navbar-brand-fosip" href="../index.php">
-        <img src="../assets/img/logowhite.png" alt="Logo FOSIP" class="logo-fosip">
-        <div class="brand-text-container d-none d-md-flex">
-          <div class="brand-main-title">Staff Performance Suite</div>
-          <div class="brand-subtitle">Système d'évaluation du personnel</div>
+      <a class="navbar-brand-fosip d-flex align-items-center gap-2" href="../index.php" style="text-decoration:none;">
+        <img src="../assets/img/logowhite.png" alt="Logo FOSIP" class="logo-fosip" style="height:28px;width:auto;box-shadow:0 0 8px #3D74B955;">
+        <div class="brand-text-container" style="display:flex;flex-direction:column;gap:0.5px;line-height:1;">
+          <span class="brand-main-title" style="
+            font-family:'Montserrat','Segoe UI',Arial,sans-serif;
+            font-size:1.18rem;
+            font-weight:600;
+            color:#fff;
+            letter-spacing:1.2px;
+            line-height:1.05;
+            text-shadow:0 2px 10px #3D74B9;
+            filter: drop-shadow(0 0 2px #4d8cd6);
+          ">
+            Staff Performance Suite
+          </span>
+          <span class="brand-subtitle" style="
+            font-size:0.68rem;
+            color:#e9ecef;
+            font-weight:400;
+            letter-spacing:0.4px;
+            margin-top:1px;
+            opacity:0.85;
+          ">
+            Système d'évaluation du personnel
+          </span>
         </div>
       </a>
 

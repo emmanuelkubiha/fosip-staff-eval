@@ -211,3 +211,7 @@ body.theme-dark .badge { filter: brightness(0.95); }
 .badge-best { background:#198754; color:#fff; }
 .badge-last { background:#0d6efd; color:#fff; }
 
+.offcanvas.offcanvas-sidebar {
+  z-index: 1080 !important;
+}
+
