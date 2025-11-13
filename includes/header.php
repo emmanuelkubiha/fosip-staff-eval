@@ -145,6 +145,29 @@
       gap: 12px;
     }
     
+    .loading-text::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 30px;
+      height: 3px;
+      background: #3D74B9;
+      border-radius: 3px;
+      animation: loadingBar 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes loadingBar {
+      0%, 100% { 
+        width: 0;
+        opacity: 0;
+      }
+      50% { 
+        width: 30px;
+        opacity: 1;
+      }
+    }
+    
     /* Points animés dégradé FOSIP */
     .loading-dots {
       display: inline-flex;
@@ -308,45 +331,67 @@
       box-shadow: 0 0 16px #3D74B9aa;
     }
     
-    .brand-main-title {
-      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
-      font-size: 1.18rem !important;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 1.2px;
-      line-height: 1.05;
-      text-shadow: 0 2px 10px #3D74B9;
-      filter: drop-shadow(0 0 2px #4d8cd6);
-    }
-    
-    .brand-subtitle {
-      font-size: 0.68rem !important;
-      color: #e9ecef !important;
-      font-weight: 400;
-      letter-spacing: 0.4px;
-      margin-top: 1px;
-      opacity: 0.85;
-    }
-    
-    @media (max-width: 575.98px) {
-      .brand-subtitle {
-        display: none !important;
-        /* ou font-size: 0.48rem !important; si tu veux juste la rendre minuscule */
-      }
-      .brand-main-title {
-        font-size: 0.85rem !important;
-        letter-spacing: 0.7px !important;
-      }
-      .logo-fosip {
-        height: 16px !important;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .brand-main-title { font-size: 0.98rem !important; }
-      .brand-subtitle { font-size: 0.58rem !important; }
-      .logo-fosip { height: 20px !important; }
-    }
+    /* --- Remplacement : titre en blanc, lisible et moderne --- */
+.brand-text-container { min-width: 0; max-width: 320px; }
+
+.brand-main-title {
+  display: inline-block;
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.06rem;
+  line-height: 1;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+
+  /* Texte blanc propre (remplace le gradient) */
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+
+  /* Profondeur subtile pour lisibilité */
+  text-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Barre d'accent discrète, blanche translucide, qui s'élargit au survol */
+.brand-main-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 32px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.28);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: width .22s ease;
+}
+.navbar-brand-fosip:hover .brand-main-title::after { width: 64px; }
+
+/* Sous-titre léger en blanc semi-translucide */
+.brand-subtitle {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.88);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  max-width: 300px;
+}
+
+/* Ajustements responsive */
+@media (max-width: 576px) {
+  .brand-main-title { max-width: 140px; font-size: 0.95rem; }
+  .brand-subtitle { display: none; }
+}
+    /* --- fin remplacement --- */
     
     /* Profil utilisateur dans le header */
     .user-profile-dropdown {
@@ -849,45 +894,67 @@
       box-shadow: 0 0 16px #3D74B9aa;
     }
     
-    .brand-main-title {
-      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
-      font-size: 1.18rem !important;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 1.2px;
-      line-height: 1.05;
-      text-shadow: 0 2px 10px #3D74B9;
-      filter: drop-shadow(0 0 2px #4d8cd6);
-    }
-    
-    .brand-subtitle {
-      font-size: 0.68rem !important;
-      color: #e9ecef !important;
-      font-weight: 400;
-      letter-spacing: 0.4px;
-      margin-top: 1px;
-      opacity: 0.85;
-    }
-    
-    @media (max-width: 575.98px) {
-      .brand-subtitle {
-        display: none !important;
-        /* ou font-size: 0.48rem !important; si tu veux juste la rendre minuscule */
-      }
-      .brand-main-title {
-        font-size: 0.85rem !important;
-        letter-spacing: 0.7px !important;
-      }
-      .logo-fosip {
-        height: 16px !important;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .brand-main-title { font-size: 0.98rem !important; }
-      .brand-subtitle { font-size: 0.58rem !important; }
-      .logo-fosip { height: 20px !important; }
-    }
+    /* --- Remplacement : titre en blanc, lisible et moderne --- */
+.brand-text-container { min-width: 0; max-width: 320px; }
+
+.brand-main-title {
+  display: inline-block;
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.06rem;
+  line-height: 1;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+
+  /* Texte blanc propre (remplace le gradient) */
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+
+  /* Profondeur subtile pour lisibilité */
+  text-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Barre d'accent discrète, blanche translucide, qui s'élargit au survol */
+.brand-main-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 32px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.28);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: width .22s ease;
+}
+.navbar-brand-fosip:hover .brand-main-title::after { width: 64px; }
+
+/* Sous-titre léger en blanc semi-translucide */
+.brand-subtitle {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.88);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  max-width: 300px;
+}
+
+/* Ajustements responsive */
+@media (max-width: 576px) {
+  .brand-main-title { max-width: 140px; font-size: 0.95rem; }
+  .brand-subtitle { display: none; }
+}
+    /* --- fin remplacement --- */
     
     /* Profil utilisateur dans le header */
     .user-profile-dropdown {
@@ -1387,6 +1454,23 @@
         font-size: 0.8rem;
       }
     }
+    
+    /* --- Override mobile: titres très petits pour petits écrans --- */
+@media (max-width: 576px) {
+  .brand-main-title {
+    font-size: 0.72rem !important; /* très petit */
+    max-width: 120px !important;
+    line-height: 1 !important;
+  }
+  .brand-subtitle {
+    font-size: 0.52rem !important; /* encore plus petit */
+    max-width: 140px !important;
+    display: block !important;
+    opacity: 0.9 !important;
+  }
+  .logo-fosip { height: 18px !important; } /* optionnel : réduit le logo pour compenser */
+}
+    /* --- fin override --- */
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -1460,34 +1544,14 @@
         </button>
       <?php endif; ?>
       <!-- Logo et nom -->
-      <a class="navbar-brand-fosip d-flex align-items-center gap-2" href="../index.php" style="text-decoration:none;">
-        <img src="../assets/img/logowhite.png" alt="Logo FOSIP" class="logo-fosip" style="height:28px;width:auto;box-shadow:0 0 8px #3D74B955;">
-        <div class="brand-text-container" style="display:flex;flex-direction:column;gap:0.5px;line-height:1;">
-          <span class="brand-main-title" style="
-            font-family:'Montserrat','Segoe UI',Arial,sans-serif;
-            font-size:1.18rem;
-            font-weight:600;
-            color:#fff;
-            letter-spacing:1.2px;
-            line-height:1.05;
-            text-shadow:0 2px 10px #3D74B9;
-            filter: drop-shadow(0 0 2px #4d8cd6);
-          ">
-            Staff Performance Suite
-          </span>
-          <span class="brand-subtitle" style="
-            font-size:0.68rem;
-            color:#e9ecef;
-            font-weight:400;
-            letter-spacing:0.4px;
-            margin-top:1px;
-            opacity:0.85;
-          ">
-            Système d'évaluation du personnel
-          </span>
-        </div>
-      </a>
-
+      <!-- --- Remplacement HTML branding (remplace l'ancien <a class="navbar-brand-fosip">...)</* --- -->
+<a class="navbar-brand-fosip d-flex align-items-center gap-2" href="../index.php" aria-label="FOSIP — Staff Performance Suite" title="FOSIP — Staff Performance Suite" style="text-decoration:none; min-width:0;">
+  <img src="../assets/img/logowhite.png" alt="Logo FOSIP" class="logo-fosip" />
+  <div class="brand-text-container">
+    <span class="brand-main-title" title="Staff Performance Suite">Staff Performance Suite</span>
+    <span class="brand-subtitle" title="Système d'évaluation du personnel">Système d'évaluation du personnel</span>
+  </div>
+</a>
       <!-- Profil utilisateur à droite -->
       <div class="ms-auto">
         <?php
