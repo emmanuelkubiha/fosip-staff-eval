@@ -233,7 +233,8 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
   <div class="col-md-3">
     <?php include('../includes/sidebar.php'); ?>
   </div>
-  <div class="col-md-9">
+  <div class="col-md-9 fiche-padding-gauche">
+    <!-- Contenu principal de la fiche d'évaluation complète -->
     <div class="container-fluid mt-4 mb-5">
       
       <!-- En-tête -->
@@ -248,7 +249,14 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
           <a href="javascript:window.print()" class="btn btn-outline-secondary">
             <i class="bi bi-printer me-1"></i> Imprimer
           </a>
-          <a href="<?= $role === 'superviseur' ? 'supervision.php' : 'coordination.php' ?>" class="btn btn-outline-primary">
+          <?php
+            // Déterminer l'URL de retour : superviseur -> supervision, sinon -> dashboard
+            $returnUrl = 'dashboard.php';
+            if (isset($role) && $role === 'superviseur') {
+              $returnUrl = 'supervision.php';
+            }
+          ?>
+          <a href="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>"  style="color: #3D74B9;" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left me-1"></i> Retour
           </a>
         </div>
@@ -708,12 +716,10 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
 
       <!-- Boutons d'action en bas -->
       <div class="text-center mt-4 no-print">
-        <a href="javascript:window.print()" class="btn btn-primary btn-lg me-2">
+        <a href="javascript:window.print()"  style="background-color: #3D74B9;" class="btn btn-primary btn-lg me-2">
           <i class="bi bi-printer me-2"></i> Imprimer cette synthèse
         </a>
-        <a href="<?= $role === 'superviseur' ? 'supervision.php' : 'coordination.php' ?>" class="btn btn-outline-secondary btn-lg">
-          <i class="bi bi-arrow-left me-2"></i> Retour à la liste
-        </a>
+
       </div>
 
       <!-- Section Signatures (visible uniquement à l'impression) -->
@@ -1096,6 +1102,15 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
 .print-header-complete {
   display: none;
 }
-</style>
 
-<?php include('../includes/footer.php'); ?>
+/* Padding à gauche uniquement à l'écran */
+.fiche-padding-gauche {
+  padding-left: 8rem;
+}
+
+/* À l'impression, annule le padding */
+@media print {
+  .fiche-padding-gauche {
+    padding-left: 0 !important;
+  }
+}

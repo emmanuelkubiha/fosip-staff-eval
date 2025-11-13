@@ -1025,6 +1025,29 @@ document.addEventListener('DOMContentLoaded', function () {
   background: linear-gradient(135deg, #e8f2f9 0%, #fef5ed 100%);
   min-height: 100vh;
   padding-bottom: 2rem;
+  /* NE PAS METTRE de position, top, height, z-index */
+}
+
+/* Responsive padding */
+@media (max-width: 991px) {
+  .dashboard-main {
+    background: #fff !important;
+    min-height: auto !important;
+    padding-bottom: 2rem;
+  }
+  .offcanvas {
+    z-index: 1080 !important;
+  }
+}
+
+/* Desktop : aucune règle de position */
+@media (min-width: 992px) {
+  .dashboard-main {
+    background: #fff;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+    /* pas de position sticky/fixed/relative/top/z-index/height */
+  }
 }
 
 /* Cartes modernisées */
@@ -1106,25 +1129,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 }
 
-/* Responsive padding */
-@media (max-width: 991px) {
-  .dashboard-main {
-    position: static !important;
-    z-index: auto !important;
-    background: #fff !important;
-  }
-  .offcanvas {
-    z-index: 1080 !important;
-  }
-}
-
-@media (min-width: 992px) {
-  .dashboard-main {
-    position: relative;
-    z-index: 1;
-    background: #fff;
-  }
-}
+/* TODO: ISSUE-XXXXX -> Sticky dashboard provoque un espace vide en haut sur desktop (inspecter top/navbar height).
+     Signaler sur GitHub et appliquer fix : soit retirer position:sticky/fixed, soit définir top égal à la hauteur réelle de la navbar. */
 </style>
 
 <?php include('../includes/footer.php'); ?>

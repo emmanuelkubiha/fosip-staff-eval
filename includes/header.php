@@ -1415,6 +1415,38 @@
     </div>
   </div>
 
+  <script>
+  (function(){
+    // Masque le loader puis le supprime après transition
+    function hideLoader() {
+      try {
+        var loader = document.getElementById('page-loader');
+        if (!loader) return;
+        if (!loader.classList.contains('fade-out')) {
+          loader.classList.add('fade-out');
+          // nettoyage DOM après la transition
+          setTimeout(function(){
+            if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+          }, 700);
+        }
+      } catch (e) { /* silent */ }
+    }
+
+    // Si le document est déjà complètement chargé
+    if (document.readyState === 'complete') {
+      hideLoader();
+    } else {
+      // Exécute lorsque toutes les ressources sont chargées
+      window.addEventListener('load', hideLoader, {passive:true, once:true});
+      // Exécute quand le DOM est prêt (plus rapide)
+      document.addEventListener('DOMContentLoaded', function(){ setTimeout(hideLoader, 50); }, {once:true});
+    }
+
+    // Fallback : en cas de blocage, forcer la disparition au bout de 6s
+    setTimeout(hideLoader, 6000);
+  })();
+  </script>
+
   <!-- Barre de navigation moderne -->
   <nav class="navbar navbar-expand-lg navbar-fosip sticky-top">
     <div class="container-fluid">
