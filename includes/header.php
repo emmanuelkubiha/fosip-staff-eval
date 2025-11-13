@@ -1418,13 +1418,16 @@
   <!-- Barre de navigation moderne -->
   <nav class="navbar navbar-expand-lg navbar-fosip sticky-top">
     <div class="container-fluid">
-      <!-- Bouton menu mobile (hamburger) -->
-      <button class="btn btn-menu-toggle d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMobile">
-        <i class="bi bi-list fs-4"></i>
-      </button>
-
+      <?php
+      if (session_status() === PHP_SESSION_NONE) session_start();
+      if (!empty($_SESSION['user_id'])):
+      ?>
+        <!-- Bouton menu mobile (hamburger) visible seulement si connecté -->
+        <button class="btn btn-menu-toggle d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMobile">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+      <?php endif; ?>
       <!-- Logo et nom -->
-        <!-- Logo et nom -->
       <a class="navbar-brand-fosip d-flex align-items-center gap-2" href="../index.php" style="text-decoration:none;">
         <img src="../assets/img/logowhite.png" alt="Logo FOSIP" class="logo-fosip" style="height:28px;width:auto;box-shadow:0 0 8px #3D74B955;">
         <div class="brand-text-container" style="display:flex;flex-direction:column;gap:0.5px;line-height:1;">

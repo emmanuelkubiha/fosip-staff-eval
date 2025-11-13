@@ -220,7 +220,9 @@ include('../includes/header.php');
 
 
       <div class="text-center mt-4">
-        <a href="dashboard.php" class="btn btn-outline-primary"><i class="bi bi-arrow-left-circle me-1"></i> Retour au tableau de bord</a>
+        <a href="dashboard.php" class="btn btn-secondary mt-4">
+          Retour
+        </a>
       </div>
 
       <div class="text-center text-muted small mt-3">
