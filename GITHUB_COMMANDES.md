@@ -210,4 +210,34 @@ Si tu vois cette erreur, lance `git push --set-upstream origin main` une seule f
 
 ---
 
+## 🖥️ Changer de machine ou récupérer l’historique Git
+
+Si tu passes sur une nouvelle machine :
+
+1. **Cloner le dépôt depuis GitHub**  
+   Ouvre le terminal et lance :
+   ```bash
+   git clone https://github.com/emmanuelkubiha/fosip-staff-eval.git
+   ```
+   > Cela télécharge tout le projet avec l’historique complet des commits.
+
+2. **Se placer dans le dossier cloné**  
+   ```bash
+   cd fosip-staff-eval
+   ```
+
+3. **Vérifier l’historique**  
+   ```bash
+   git log
+   ```
+   > Tu verras tous les commits faits sur l’autre machine.
+
+4. **Continuer à travailler normalement**  
+   - Modifie tes fichiers
+   - `git add .`
+   - `git commit -m "Ton message"`
+   - `git push`
+
+---
+
 **Ce fichier est ton pense-bête Git pour le projet FOSIP !**
