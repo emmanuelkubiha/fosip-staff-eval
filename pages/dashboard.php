@@ -627,14 +627,11 @@ elseif ($role === 'admin') {
 }
 
 ?>
-<!-- Inclure le sidebar offcanvas en dehors de la grille principale -->
-<?php include('../includes/sidebar.php'); ?>
-
 <div class="container-fluid">
   <div class="row">
-    <div class="col-lg-3 col-xl-3 d-none d-lg-block">
-      <!-- Sidebar desktop uniquement -->
-      <!-- (Ne pas inclure sidebar.php ici, déjà inclus au-dessus) -->
+    <!-- Sidebar desktop et offcanvas mobile intégrés dans la colonne -->
+    <div class="col-lg-3 col-xl-3 sidebar-zone">
+      <?php include('../includes/sidebar.php'); ?>
     </div>
     <div class="col-12 col-lg-9 col-xl-9 p-4 dashboard-main">
 
