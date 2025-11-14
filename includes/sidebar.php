@@ -2,9 +2,7 @@
 // sidebar.php
 // Sidebar simplifiée sans profil (déplacé dans le header)
 
-if (session_status() === PHP_SESSION_NONE) {
-  session_start();
-}
+// session_start() supprimé, la session doit être démarrée dans le script principal
 
 require_once dirname(__DIR__) . '/includes/db.php';
 

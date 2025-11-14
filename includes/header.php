@@ -1535,7 +1535,7 @@
   <nav class="navbar navbar-expand-lg navbar-fosip sticky-top">
     <div class="container-fluid">
       <?php
-      if (session_status() === PHP_SESSION_NONE) session_start();
+      // session_start() supprimé, la session doit être démarrée dans le script principal
       if (!empty($_SESSION['user_id'])):
       ?>
         <!-- Bouton menu mobile (hamburger) visible seulement si connecté -->
@@ -1555,7 +1555,7 @@
       <!-- Profil utilisateur à droite -->
       <div class="ms-auto">
         <?php
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        // session_start() supprimé, la session doit être démarrée dans le script principal
         
         if (!empty($_SESSION['user_id'])):
           // Récupération des infos utilisateur
