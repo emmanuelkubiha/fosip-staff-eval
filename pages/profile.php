@@ -218,11 +218,17 @@ include('../includes/header.php');
 }
 
 @media (max-width: 991px){.avatar-frame{width:100px;height:100px;} .profile-shell{padding:1.25rem;}}
+@media (max-width: 575.98px) {
+  .col-md-9 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
 </style>
 
 <div class="row">
   <div class="col-md-3"><?php include('../includes/sidebar.php'); ?></div>
-  <div class="col-md-9" style="padding-left: 8rem;">
+  <div class="col-md-9">
     <div class="profile-shell mb-4">
       <div class="d-flex flex-wrap align-items-start gap-4 mb-3">
         <div class="avatar-frame">
@@ -752,7 +758,5 @@ document.addEventListener('DOMContentLoaded', function(){
       reader.readAsDataURL(file);
     });
   }
-
-  // ...existing code...
 });
 </script>

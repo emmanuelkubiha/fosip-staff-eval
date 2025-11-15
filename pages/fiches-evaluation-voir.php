@@ -128,6 +128,9 @@ $csrf = ensure_csrf();
   border: 2px solid #e9ecef;
   transition: all 0.3s ease;
   overflow: hidden;
+  min-height: 370px; /* Correction: assure une hauteur uniforme pour éviter les décalages */
+  display: flex;
+  flex-direction: column;
 }
 
 .fiche-card:hover {
@@ -357,7 +360,8 @@ $csrf = ensure_csrf();
           </div>
         </div>
       <?php else: ?>
-        <div class="row g-3">
+        <!-- Correction: Masonry responsive avec flex-wrap -->
+        <div class="d-flex flex-wrap gap-3">
           <?php foreach ($fiches as $i => $f):
                 $id = (int)$f['id'];
 
@@ -419,8 +423,7 @@ $csrf = ensure_csrf();
                 $aPerc = $totalAE ? round($am['atteint']*100/$totalAE) : 0;
                 $nPerc = $totalAE ? 100 - $dPerc - $aPerc : 0;
               ?>
-            <div class="col-md-6 col-lg-4">
-              <div class="fiche-card" data-href="fiche-evaluation.php?id=<?php echo $id; ?>" style="cursor:pointer;">
+              <div class="fiche-card mb-3" data-href="fiche-evaluation.php?id=<?php echo $id; ?>" style="cursor:pointer; flex: 1 1 320px; max-width: 370px;">
                 <div class="fiche-card-header">
                   <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="d-flex align-items-center flex-grow-1">
@@ -557,7 +560,7 @@ document.querySelectorAll('tr[data-href]').forEach(row=>{
 });
 
 // clic sur la carte (ignore clicks sur contrôles)
-document.querySelectorAll('.card.section-card[data-href]').forEach(card => {
+document.querySelectorAll('.fiche-card[data-href]').forEach(card => {
   card.addEventListener('click', function(e){
     if (e.target.closest('a,button,input,.btn,svg,path')) return;
     window.location = this.dataset.href;
