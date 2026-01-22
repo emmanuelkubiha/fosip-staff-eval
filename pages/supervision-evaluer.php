@@ -163,7 +163,7 @@ function renderRadioOptions($namePrefix, $existing){
   <div class="col-md-3">
     <?php include('../includes/sidebar.php'); ?>
   </div>
-  <div class="col-md-9">
+  <div class="col-md-9" style="padding-left: 6rem;">
     <div class="container-fluid mt-4">
       <!-- En-tête avec retour -->
       <div class="d-flex align-items-center mb-3">

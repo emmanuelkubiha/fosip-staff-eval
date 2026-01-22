@@ -14,7 +14,7 @@ include('../includes/header.php');
     <?php include('../includes/sidebar.php'); ?>
   </div>
 
-  <div class="col-md-9 content-col">
+  <div class="col-md-9 content-col" style="padding-left: 7.5rem;">
     <div class="container mt-4">
 
 <?php

@@ -228,7 +228,7 @@ include('../includes/header.php');
 
 <div class="row">
   <div class="col-md-3"><?php include('../includes/sidebar.php'); ?></div>
-  <div class="col-md-9">
+  <div class="col-md-9" style="padding-left: 6rem;">
     <div class="profile-shell mb-4">
       <div class="d-flex flex-wrap align-items-start gap-4 mb-3">
         <div class="avatar-frame">

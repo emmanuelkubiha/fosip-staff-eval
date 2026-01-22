@@ -42,6 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
     $pdo->beginTransaction();
     // Suppression en cascade
+    // Supprimer d'abord les évaluations de compétences liées à cet utilisateur (superviseur ou supervisé)
+    $pdo->prepare('DELETE FROM competence_evaluation WHERE superviseur_id = ? OR supervise_id = ?')->execute([$id, $id]);
     $pdo->prepare('DELETE FROM cote_des_objectifs WHERE fiche_id IN (SELECT id FROM objectifs WHERE user_id = ?)')->execute([$id]);
     $pdo->prepare('DELETE FROM auto_evaluation WHERE fiche_id IN (SELECT id FROM objectifs WHERE user_id = ?)')->execute([$id]);
     $pdo->prepare('DELETE FROM coordination_commentaires WHERE fiche_id IN (SELECT id FROM objectifs WHERE user_id = ?)')->execute([$id]);

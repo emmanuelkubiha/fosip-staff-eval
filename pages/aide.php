@@ -8,7 +8,7 @@ include('../includes/header.php');
   <div class="col-md-3">
     <?php include('../includes/sidebar.php'); ?>
   </div>
-  <div class="col-md-9">
+  <div class="col-md-9" style="padding-left: 6rem;">
     <div class="container mt-4 mb-5">
       <div class="d-flex align-items-center mb-3 py-2 px-3 rounded-3 shadow-sm" style="background:#f8f9fa;">
         <div class="me-3 d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:#e9ecef;border-radius:50%;">

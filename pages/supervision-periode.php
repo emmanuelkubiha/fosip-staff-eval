@@ -53,7 +53,7 @@ foreach ($rows as $r) { $p = $r['periode'] ?? '—'; if (!isset($grouped[$p])) $
       <?php include('../includes/sidebar.php'); ?>
     </div>
   </div>
-  <div class="col-md-9 content-col">
+  <div class="col-md-9 content-col" style="padding-left: 7.5rem;">
     <div class="container mt-4">
       <div class="d-flex align-items-start mb-3">
         <h4 class="mb-0" style="color:#3D74B9;"><i class="bi bi-calendar3 me-2"></i> Supervision — Vue par période</h4>

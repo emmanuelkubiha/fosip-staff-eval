@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Hôte : 127.0.0.1
--- Généré le : mer. 12 nov. 2025 à 07:21
--- Version du serveur : 10.4.32-MariaDB
--- Version de PHP : 8.2.12
+-- Hôte : localhost:8889
+-- Généré le : jeu. 22 jan. 2026 à 12:43
+-- Version du serveur : 8.0.40
+-- Version de PHP : 8.3.14
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -28,24 +28,17 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `actions_recommandations` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL COMMENT 'Référence à objectifs.id',
-  `superviseur_id` int(11) NOT NULL COMMENT 'Référence à users.id (superviseur)',
-  `besoins_developpement` text DEFAULT NULL COMMENT 'Détaillez les besoins de développement identifiés',
-  `necessite_developpement` text DEFAULT NULL COMMENT 'Expliquez la nécessité de ce développement',
-  `comment_atteindre` text DEFAULT NULL COMMENT 'Comment cet objectif sera atteint',
-  `quand_atteindre` varchar(255) DEFAULT NULL COMMENT 'Quand cet objectif sera atteint',
-  `autres_actions` text DEFAULT NULL COMMENT 'Toute autre action ou suivi convenu',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL COMMENT 'Référence à objectifs.id',
+  `superviseur_id` int NOT NULL COMMENT 'Référence à users.id (superviseur)',
+  `besoins_developpement` text COLLATE utf8mb4_unicode_ci COMMENT 'Détaillez les besoins de développement identifiés',
+  `necessite_developpement` text COLLATE utf8mb4_unicode_ci COMMENT 'Expliquez la nécessité de ce développement',
+  `comment_atteindre` text COLLATE utf8mb4_unicode_ci COMMENT 'Comment cet objectif sera atteint',
+  `quand_atteindre` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Quand cet objectif sera atteint',
+  `autres_actions` text COLLATE utf8mb4_unicode_ci COMMENT 'Toute autre action ou suivi convenu',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Déchargement des données de la table `actions_recommandations`
---
-
-INSERT INTO `actions_recommandations` (`id`, `fiche_id`, `superviseur_id`, `besoins_developpement`, `necessite_developpement`, `comment_atteindre`, `quand_atteindre`, `autres_actions`, `created_at`, `updated_at`) VALUES
-(1, 2, 2, 'AUCUN', NULL, NULL, 'Decembre 2025', NULL, '2025-11-08 10:10:06', '2025-11-08 10:10:06');
 
 -- --------------------------------------------------------
 
@@ -54,22 +47,15 @@ INSERT INTO `actions_recommandations` (`id`, `fiche_id`, `superviseur_id`, `beso
 --
 
 CREATE TABLE `auto_evaluation` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `item_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `note` enum('non_atteint','atteint','depasse') NOT NULL,
-  `commentaire` text DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `item_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `note` enum('non_atteint','atteint','depasse') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `commentaire` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Déchargement des données de la table `auto_evaluation`
---
-
-INSERT INTO `auto_evaluation` (`id`, `fiche_id`, `item_id`, `user_id`, `note`, `commentaire`, `created_at`, `updated_at`) VALUES
-(1, 2, 3, 3, 'atteint', NULL, '2025-11-07 15:47:53', NULL);
 
 -- --------------------------------------------------------
 
@@ -78,18 +64,18 @@ INSERT INTO `auto_evaluation` (`id`, `fiche_id`, `item_id`, `user_id`, `note`, `
 --
 
 CREATE TABLE `competences_de_gestion` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `planification_organisation` varchar(50) NOT NULL,
-  `communication_verbale` varchar(50) NOT NULL,
-  `communication_ecrite` varchar(50) NOT NULL,
-  `respect_procedures` varchar(50) NOT NULL,
-  `respect_delai` varchar(50) NOT NULL,
-  `commentaire` text DEFAULT NULL,
-  `auteur_id` int(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `planification_organisation` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `communication_verbale` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `communication_ecrite` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `respect_procedures` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `respect_delai` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `commentaire` text COLLATE utf8mb4_general_ci,
+  `auteur_id` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -98,19 +84,19 @@ CREATE TABLE `competences_de_gestion` (
 --
 
 CREATE TABLE `competences_individuelles` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `perseverance` varchar(50) NOT NULL,
-  `qualite_de_travail` varchar(50) NOT NULL,
-  `gestion_de_temps` varchar(50) NOT NULL,
-  `flexibilite` varchar(50) NOT NULL,
-  `auto_developpement` varchar(50) NOT NULL,
-  `ponctualite` varchar(50) NOT NULL,
-  `commentaire` text DEFAULT NULL,
-  `auteur_id` int(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `perseverance` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `qualite_de_travail` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `gestion_de_temps` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `flexibilite` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `auto_developpement` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `ponctualite` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `commentaire` text COLLATE utf8mb4_general_ci,
+  `auteur_id` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -119,17 +105,17 @@ CREATE TABLE `competences_individuelles` (
 --
 
 CREATE TABLE `competence_evaluation` (
-  `id` int(11) NOT NULL,
-  `superviseur_id` int(11) DEFAULT NULL,
-  `supervise_id` int(11) DEFAULT NULL,
-  `cycle_id` int(11) DEFAULT NULL,
-  `categorie` enum('individuelle','gestion','leader','profil') NOT NULL,
-  `competence` varchar(100) DEFAULT NULL,
-  `point_avere` tinyint(1) DEFAULT 0,
-  `point_fort` tinyint(1) DEFAULT 0,
-  `point_a_developper` tinyint(1) DEFAULT 0,
-  `non_applicable` tinyint(1) DEFAULT 0,
-  `commentaire` text DEFAULT NULL
+  `id` int NOT NULL,
+  `superviseur_id` int DEFAULT NULL,
+  `supervise_id` int DEFAULT NULL,
+  `cycle_id` int DEFAULT NULL,
+  `categorie` enum('individuelle','gestion','leader','profil') COLLATE utf8mb4_general_ci NOT NULL,
+  `competence` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `point_avere` tinyint(1) DEFAULT '0',
+  `point_fort` tinyint(1) DEFAULT '0',
+  `point_a_developper` tinyint(1) DEFAULT '0',
+  `non_applicable` tinyint(1) DEFAULT '0',
+  `commentaire` text COLLATE utf8mb4_general_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -164,14 +150,14 @@ INSERT INTO `competence_evaluation` (`id`, `superviseur_id`, `supervise_id`, `cy
 --
 
 CREATE TABLE `competence_profile_evaluations` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `fiche_id` int(10) UNSIGNED NOT NULL,
-  `competence_id` int(10) UNSIGNED NOT NULL,
-  `auteur_id` int(10) UNSIGNED NOT NULL,
-  `note` enum('non_atteint','atteint','depasse') NOT NULL,
-  `superviseur_profile_commentaire` text DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` int UNSIGNED NOT NULL,
+  `fiche_id` int UNSIGNED NOT NULL,
+  `competence_id` int UNSIGNED NOT NULL,
+  `auteur_id` int UNSIGNED NOT NULL,
+  `note` enum('non_atteint','atteint','depasse') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `superviseur_profile_commentaire` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -181,11 +167,11 @@ CREATE TABLE `competence_profile_evaluations` (
 --
 
 CREATE TABLE `competence_votre_profil` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `user_id` int(10) UNSIGNED NOT NULL,
-  `competence` varchar(255) NOT NULL,
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `competence` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -203,20 +189,13 @@ INSERT INTO `competence_votre_profil` (`id`, `user_id`, `competence`, `updated_a
 --
 
 CREATE TABLE `coordination_commentaires` (
-  `id` int(11) NOT NULL,
-  `coord_id` int(11) DEFAULT NULL,
-  `supervise_id` int(11) DEFAULT NULL,
-  `fiche_id` int(11) DEFAULT NULL,
-  `commentaire` text DEFAULT NULL,
+  `id` int NOT NULL,
+  `coord_id` int DEFAULT NULL,
+  `supervise_id` int DEFAULT NULL,
+  `fiche_id` int DEFAULT NULL,
+  `commentaire` text COLLATE utf8mb4_general_ci,
   `date_commentaire` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Déchargement des données de la table `coordination_commentaires`
---
-
-INSERT INTO `coordination_commentaires` (`id`, `coord_id`, `supervise_id`, `fiche_id`, `commentaire`, `date_commentaire`) VALUES
-(3, 5, 2, 2, 'C\'sr bien RAS', '2025-11-08');
 
 -- --------------------------------------------------------
 
@@ -225,23 +204,15 @@ INSERT INTO `coordination_commentaires` (`id`, `coord_id`, `supervise_id`, `fich
 --
 
 CREATE TABLE `cote_des_objectifs` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `item_id` int(11) NOT NULL,
-  `superviseur_id` int(11) NOT NULL,
-  `note` tinyint(3) UNSIGNED NOT NULL,
-  `commentaire` text DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `item_id` int NOT NULL,
+  `superviseur_id` int NOT NULL,
+  `note` tinyint UNSIGNED NOT NULL,
+  `commentaire` text COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Déchargement des données de la table `cote_des_objectifs`
---
-
-INSERT INTO `cote_des_objectifs` (`id`, `fiche_id`, `item_id`, `superviseur_id`, `note`, `commentaire`, `created_at`, `updated_at`) VALUES
-(1, 2, 3, 2, 14, NULL, '2025-11-08 12:10:06', '2025-11-08 12:10:06'),
-(2, 2, 4, 2, 16, NULL, '2025-11-08 12:10:06', '2025-11-08 12:10:06');
 
 -- --------------------------------------------------------
 
@@ -250,9 +221,9 @@ INSERT INTO `cote_des_objectifs` (`id`, `fiche_id`, `item_id`, `superviseur_id`,
 --
 
 CREATE TABLE `evaluation_cycles` (
-  `id` int(11) NOT NULL,
-  `mois` int(11) DEFAULT NULL,
-  `annee` int(11) DEFAULT NULL,
+  `id` int NOT NULL,
+  `mois` int DEFAULT NULL,
+  `annee` int DEFAULT NULL,
   `date_creation` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -263,22 +234,22 @@ CREATE TABLE `evaluation_cycles` (
 --
 
 CREATE TABLE `objectifs` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `nom_projet` varchar(255) DEFAULT NULL,
-  `poste` varchar(255) DEFAULT NULL,
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `nom_projet` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `poste` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `date_commencement` date DEFAULT NULL,
-  `periode` varchar(7) DEFAULT NULL,
-  `superviseur_id` int(11) DEFAULT NULL,
-  `statut` enum('encours','attente','evalue','termine') DEFAULT 'encours',
-  `resume_reussite` text DEFAULT NULL,
-  `resume_amelioration` text DEFAULT NULL,
-  `resume_problemes` text DEFAULT NULL,
-  `resume_competence_a_developper` text DEFAULT NULL,
-  `resume_competence_a_utiliser` text DEFAULT NULL,
-  `resume_soutien` text DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `periode` varchar(7) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `superviseur_id` int DEFAULT NULL,
+  `statut` enum('encours','attente','evalue','termine') COLLATE utf8mb4_general_ci DEFAULT 'encours',
+  `resume_reussite` text COLLATE utf8mb4_general_ci,
+  `resume_amelioration` text COLLATE utf8mb4_general_ci,
+  `resume_problemes` text COLLATE utf8mb4_general_ci,
+  `resume_competence_a_developper` text COLLATE utf8mb4_general_ci,
+  `resume_competence_a_utiliser` text COLLATE utf8mb4_general_ci,
+  `resume_soutien` text COLLATE utf8mb4_general_ci,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -286,8 +257,10 @@ CREATE TABLE `objectifs` (
 --
 
 INSERT INTO `objectifs` (`id`, `user_id`, `nom_projet`, `poste`, `date_commencement`, `periode`, `superviseur_id`, `statut`, `resume_reussite`, `resume_amelioration`, `resume_problemes`, `resume_competence_a_developper`, `resume_competence_a_utiliser`, `resume_soutien`, `created_at`, `updated_at`) VALUES
-(2, 3, 'Projet 1', 'ICT', '2025-11-04', '2025-11', 2, 'termine', 'Un peu', 'Je vais m\'ammeliorer', 'aucun', '', 'en Design', 'Aucun', '2025-11-04 15:24:35', '2025-11-08 22:53:44'),
-(3, 2, 'Moi sup', 'superv', '2025-11-08', '2025-11', 2, 'encours', NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-08 05:41:38', '2025-11-08 05:41:38');
+(6, 7, 'FOSIP', 'Admin et RH', '2026-01-01', '2026-01', 5, 'encours', '', '', '', '', '', '', '2026-01-15 10:47:23', '2026-01-15 10:49:27'),
+(7, 8, 'fosip', 'chargé de la logistique ', '2026-01-06', '2026-01', 5, 'encours', NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-21 12:15:46', '2026-01-21 12:15:46'),
+(9, 7, 'FOSIP', 'Admin et RH', '2026-01-06', '2026-01', 5, 'encours', 'Nous avons identifier les besoins en formation et développement du personnel, développer l\'esprit d\'écouter, la communication et la motivation, nous avons mis en place des actions pour maintenir la motivation des employés face au changement.', 'l\'identification de mouvement interne, \r\nles entretiens annuels', 'vu que c\'est le début de l\'année nous avions encore beaucoup de choses à clôturer ensemble, pour planifier certains domaines de l\'année', 'Un encadrement en matière informatique', 'La recherche et la rédaction', 'voir avec l\'IT', '2026-01-22 09:47:23', '2026-01-22 10:16:36'),
+(10, 13, 'FOSIP', 'STAGIAIRE', '2026-01-07', '2026-01', 9, 'encours', 'J\'ai déjà une idée sur l\'organisation et sur l\'assistance humanitaire', 'appui par des formations', 'pas d\'impact', 'formation sur  la lutte contre les violences  basés sur les genres', 'la compétence sur la gestion financière', 'un appuis dans le domaine de protection et éducation', '2026-01-22 09:52:27', '2026-01-22 10:30:27');
 
 -- --------------------------------------------------------
 
@@ -296,11 +269,11 @@ INSERT INTO `objectifs` (`id`, `user_id`, `nom_projet`, `poste`, `date_commencem
 --
 
 CREATE TABLE `objectifs_items` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `contenu` text NOT NULL,
-  `ordre` int(11) DEFAULT 1,
-  `created_at` datetime DEFAULT current_timestamp()
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `contenu` text COLLATE utf8mb4_general_ci NOT NULL,
+  `ordre` int DEFAULT '1',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -308,9 +281,15 @@ CREATE TABLE `objectifs_items` (
 --
 
 INSERT INTO `objectifs_items` (`id`, `fiche_id`, `contenu`, `ordre`, `created_at`) VALUES
-(3, 2, 'TEST', 1, '2025-11-04 15:24:35'),
-(4, 2, 'TEST N 2', 2, '2025-11-05 13:33:07'),
-(6, 3, 'obj', 1, '2025-11-08 05:41:38');
+(11, 6, 'Assurer l\'administration', 1, '2026-01-15 10:47:23'),
+(12, 6, 'assurer la gestion ressources humaines', 2, '2026-01-15 10:50:06'),
+(14, 7, 'répondre aux besoins du bureau', 1, '2026-01-21 12:17:08'),
+(15, 7, 'Faire preuve de bon esprit d\'équipe', 2, '2026-01-21 12:17:48'),
+(18, 9, 'Pilotage de la performance et développement : Entretiens annuels, planification des compétences et préparer les potentiels mouvements internes', 1, '2026-01-22 09:47:24'),
+(19, 9, 'Stratégie et anticipation : planification des recrutements, promotion des valeurs et un environnement de travail motivant et inclusif', 2, '2026-01-22 09:47:24'),
+(20, 9, 'Relation avec les parties prenantes : écoute, communication et motivation.', 3, '2026-01-22 09:47:24'),
+(21, 10, 'Avoir une idée sur l\'organisation', 1, '2026-01-22 09:52:27'),
+(22, 10, 'Acquérir une connaissance sur l\'assistance humanitaire', 2, '2026-01-22 09:52:27');
 
 -- --------------------------------------------------------
 
@@ -319,16 +298,16 @@ INSERT INTO `objectifs_items` (`id`, `fiche_id`, `contenu`, `ordre`, `created_at
 --
 
 CREATE TABLE `objectifs_resumes` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `reussite` text DEFAULT NULL,
-  `amelioration` text DEFAULT NULL,
-  `problemes` text DEFAULT NULL,
-  `competence_a_developper` text DEFAULT NULL,
-  `competence_a_utiliser` text DEFAULT NULL,
-  `soutien` text DEFAULT NULL,
-  `complet` tinyint(1) DEFAULT 0,
-  `created_at` datetime DEFAULT current_timestamp()
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `reussite` text COLLATE utf8mb4_general_ci,
+  `amelioration` text COLLATE utf8mb4_general_ci,
+  `problemes` text COLLATE utf8mb4_general_ci,
+  `competence_a_developper` text COLLATE utf8mb4_general_ci,
+  `competence_a_utiliser` text COLLATE utf8mb4_general_ci,
+  `soutien` text COLLATE utf8mb4_general_ci,
+  `complet` tinyint(1) DEFAULT '0',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -338,19 +317,19 @@ CREATE TABLE `objectifs_resumes` (
 --
 
 CREATE TABLE `qualites_de_leader` (
-  `id` int(11) NOT NULL,
-  `fiche_id` int(11) NOT NULL,
-  `travail_equipe` varchar(50) NOT NULL,
-  `capacite_ecoute` varchar(50) NOT NULL,
-  `compassion` varchar(50) NOT NULL,
-  `abordable` varchar(50) NOT NULL,
-  `qualites_interpersonnelles` varchar(50) NOT NULL,
-  `comprendre_les_autres_facilement` varchar(50) NOT NULL,
-  `commentaire` text DEFAULT NULL,
-  `auteur_id` int(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+  `id` int NOT NULL,
+  `fiche_id` int NOT NULL,
+  `travail_equipe` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `capacite_ecoute` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `compassion` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `abordable` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `qualites_interpersonnelles` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `comprendre_les_autres_facilement` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `commentaire` text COLLATE utf8mb4_general_ci,
+  `auteur_id` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -359,12 +338,12 @@ CREATE TABLE `qualites_de_leader` (
 --
 
 CREATE TABLE `suivi_actions` (
-  `id` int(11) NOT NULL,
-  `superviseur_id` int(11) DEFAULT NULL,
-  `supervise_id` int(11) DEFAULT NULL,
-  `cycle_id` int(11) DEFAULT NULL,
-  `actions` text DEFAULT NULL,
-  `recommandations` text DEFAULT NULL
+  `id` int NOT NULL,
+  `superviseur_id` int DEFAULT NULL,
+  `supervise_id` int DEFAULT NULL,
+  `cycle_id` int DEFAULT NULL,
+  `actions` text COLLATE utf8mb4_general_ci,
+  `recommandations` text COLLATE utf8mb4_general_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -374,16 +353,16 @@ CREATE TABLE `suivi_actions` (
 --
 
 CREATE TABLE `supervisions` (
-  `id` int(11) NOT NULL,
-  `agent_id` int(11) NOT NULL,
-  `superviseur_id` int(11) NOT NULL,
-  `periode` varchar(7) NOT NULL,
-  `statut` enum('encours','complet') DEFAULT 'encours',
+  `id` int NOT NULL,
+  `agent_id` int NOT NULL,
+  `superviseur_id` int NOT NULL,
+  `periode` varchar(7) COLLATE utf8mb4_general_ci NOT NULL,
+  `statut` enum('encours','complet') COLLATE utf8mb4_general_ci DEFAULT 'encours',
   `date_validation` date DEFAULT NULL,
-  `commentaire` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `note` int(11) NOT NULL
+  `commentaire` text COLLATE utf8mb4_general_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `note` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -393,15 +372,15 @@ CREATE TABLE `supervisions` (
 --
 
 CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `nom` varchar(100) DEFAULT NULL,
-  `post_nom` varchar(100) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `mot_de_passe` varchar(255) DEFAULT NULL,
-  `role` enum('admin','staff','coordination','superviseur') NOT NULL,
-  `fonction` varchar(100) DEFAULT NULL,
-  `photo` varchar(255) DEFAULT NULL,
-  `superviseur_id` int(11) DEFAULT NULL
+  `id` int NOT NULL,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `post_nom` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `mot_de_passe` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `role` enum('admin','staff','coordination','superviseur') COLLATE utf8mb4_general_ci NOT NULL,
+  `fonction` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `photo` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `superviseur_id` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -409,11 +388,19 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `nom`, `post_nom`, `email`, `mot_de_passe`, `role`, `fonction`, `photo`, `superviseur_id`) VALUES
-(1, 'Administrateur', '-', 'admin@fosip-drc.org', '$2y$10$VqBrinNseKQAeKjEVgMJb.2B8Mevm5cZESoBGSINtFthWv54otwyu', 'admin', 'IT', NULL, 1),
+(1, 'Administrateur', '-', 'admin@fosip-drc.org', '$2y$12$k/IxOMeizYqrqZMA6ne19eDChwjIkyviU1fasXQ2RAZQV29pMZCdO', 'admin', 'IT', NULL, 1),
 (2, 'Espoir', 'Rusimwa', 'superviseur@fosip-drc.org', '$2y$10$8G.csLWe.1z.bSyC7.Gr5uz7uvaDSXghO2SrRmko9Y1hmekzK10sO', 'superviseur', 'LOGISTIQUE', NULL, NULL),
-(3, 'EMMANUEL', 'KUBIHA', 'emmanuel.kubiha@fosip-drc.org', '$2y$10$y2tAS1ZFfdlD2.rvlrMnregqYAiAU9yrthJOauayqGy3g0/08GepK', 'staff', 'IT', 'user_3_1762772198.jpeg', 2),
+(3, 'EMMANUEL', 'KUBIHA', 'emmanuel.kubiha@fosip-drc.org', '$2y$10$y2tAS1ZFfdlD2.rvlrMnregqYAiAU9yrthJOauayqGy3g0/08GepK', 'staff', 'IT', 'user_3_1762772198.jpeg', 7),
 (4, 'Administrateur', '-', 'admin@gmail.com', '$2y$10$y2tAS1ZFfdlD2.rvlrMnregqYAiAU9yrthJOauayqGy3g0/08GepK', 'admin', 'Admin', NULL, NULL),
-(5, 'GLORIA', 'MWAGALWA', 'coordination@fosip-drc.org', '$2y$10$y2tAS1ZFfdlD2.rvlrMnregqYAiAU9yrthJOauayqGy3g0/08GepK', 'coordination', 'Coordonatrice', NULL, NULL);
+(5, 'GLORIA', 'MWAGALWA', 'coordination@fosip-drc.org', '$2y$10$y2tAS1ZFfdlD2.rvlrMnregqYAiAU9yrthJOauayqGy3g0/08GepK', 'coordination', 'Coordonatrice', '69163e727fc9e_profile-pic.png', NULL),
+(6, 'Merveil', 'Tshibuyi', 'merveil.tshibuyi@fosip-drc.org', '$2y$12$wPUhusZ/9Jac5LEn9.hgZun.PB/iN6bTM8TC95217yeTuv0fLZc6O', 'staff', 'Comptable', '69163dbeb2c14_IMG_3265.jpeg', 7),
+(7, 'Edith', 'Kizito', 'edith.kizitho@fosip-drc.org', '$2y$12$2XT86tY/3yzmoZbtc30EkeN3T0Cplt2IWmjpZe.TUY7EYw9AgYDU6', 'superviseur', 'RH', '69163e02de540_profile-pic.png', 5),
+(8, 'Espoir', 'Rusimwa', 'espoir.rusimwa@fosip-drc.org', '$2y$12$LvzZCjxxE4Dgx8NpSm/PaeeNwDsoufbUDhBISOD8HU0JqlyA6N0We', 'superviseur', 'Logistique', '69163ecee9df4_profile-pic.png', NULL),
+(9, 'Daniel', 'Ziminika', 'daniel.ziminika@fosip-drc.org', '$2y$12$eQ9W88SgPQoTqptQkffEVuPWZ4QXVSAHs5pAoHwsUkQo3biJysznu', 'superviseur', 'Program M.', '69163f3170be0_profile-pic.png', 5),
+(10, 'Esther', 'Mumba', 'esther.mumba@fosip-drc.org', '$2y$12$vFfEzBVCcPBqTMVFKyYYRu6ZqqTKI2dpJyipKcU13lmjdu1yaXg5m', 'staff', 'Caissière', '69163f83cd0b3_profile-pic.png', 7),
+(11, 'Emmanuela', 'Zawadi', 'emmanuela.zawadi@fosip-drc.org', '$2y$12$.Sk2Ayh.PT3KcbLHoa6PD.9oiE.LKpJbnBd9MApyIcwNnvNyBNt8i', 'staff', 'Genre VBG', '69164076b89bc_IMG_3266.jpeg', 9),
+(12, 'Elie', 'Kabala Ngoy', 'elie.ngoy@fosip-drc.org', '$2y$12$0pqSuNJqn3Yp90a3VMPJEOktibz7UakHYU.wB1Bvu30f/1dEqbRGS', 'staff', 'MEAL', '69164148e0171_profile-pic.png', 9),
+(13, 'Marie Jeanne', 'Kulondwa', 'mariekulondwa0@gmail.com', '$2y$12$0LAi2h3XlBUOAM2faBIaZ.t/4q8Y3auDY5v0joPGVLkipcxT.Smme', 'staff', 'stagiaire', NULL, 9);
 
 --
 -- Index pour les tables déchargées
@@ -562,103 +549,103 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `actions_recommandations`
 --
 ALTER TABLE `actions_recommandations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `auto_evaluation`
 --
 ALTER TABLE `auto_evaluation`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `competences_de_gestion`
 --
 ALTER TABLE `competences_de_gestion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `competences_individuelles`
 --
 ALTER TABLE `competences_individuelles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `competence_evaluation`
 --
 ALTER TABLE `competence_evaluation`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT pour la table `competence_profile_evaluations`
 --
 ALTER TABLE `competence_profile_evaluations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `competence_votre_profil`
 --
 ALTER TABLE `competence_votre_profil`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT pour la table `coordination_commentaires`
 --
 ALTER TABLE `coordination_commentaires`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `cote_des_objectifs`
 --
 ALTER TABLE `cote_des_objectifs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT pour la table `evaluation_cycles`
 --
 ALTER TABLE `evaluation_cycles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `objectifs`
 --
 ALTER TABLE `objectifs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT pour la table `objectifs_items`
 --
 ALTER TABLE `objectifs_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT pour la table `objectifs_resumes`
 --
 ALTER TABLE `objectifs_resumes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `qualites_de_leader`
 --
 ALTER TABLE `qualites_de_leader`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `suivi_actions`
 --
 ALTER TABLE `suivi_actions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `supervisions`
 --
 ALTER TABLE `supervisions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- Contraintes pour les tables déchargées

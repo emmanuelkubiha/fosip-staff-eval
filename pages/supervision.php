@@ -117,8 +117,7 @@ if (!empty($ficheIds)) {
       <?php include('../includes/sidebar.php'); ?>
     </div>
   </div>
-  <div class="col-md-9 content-col">
-    <div class="container mt-4">
+  <div class="col-md-9 content-col" style="padding-left: 6rem;">
     <div class="container mt-4">
 
       <!-- En-tête moderne -->
