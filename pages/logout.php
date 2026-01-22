@@ -11,6 +11,7 @@ session_destroy();
 // Stocke un indicateur temporaire dans sessionStorage
 sessionStorage.setItem('logoutToast', '1');
 
-// Redirige vers la page de connexion
-window.location.href = '/fosip-eval/pages/login.php';
+// Redirige vers la page de connexion (chemin dynamique, compatible local/prod)
+var base = window.location.pathname.split('/pages/')[0];
+window.location.href = base + '/pages/login.php';
 </script>

@@ -35,9 +35,8 @@ function tableExists(PDO $pdo, string $table): bool {
 $search = trim((string)($_GET['q'] ?? ''));
 $periode = trim((string)($_GET['periode'] ?? ''));
 
-// Requête corrigée: affiche uniquement les agents dont le superviseur est l'utilisateur connecté
 $sql = "SELECT 
-          o.id AS fiche_id, o.periode, o.nom_projet, o.poste, o.statut AS fiche_statut,
+          o.id AS fiche_id, o.periode, o.nom_projet, o.poste, o.statut AS fiche_statut, o.created_at AS fiche_created_at, o.updated_at AS fiche_updated_at,
           a.id AS agent_id, a.nom AS agent_nom, a.post_nom AS agent_post_nom, a.photo AS agent_photo,
           s.id AS sup_id, s.statut AS sup_statut, s.note AS sup_note
         FROM objectifs o
@@ -282,6 +281,25 @@ if (!empty($ficheIds)) {
                       <i class="bi bi-briefcase me-1"></i>
                       <?= htmlspecialchars($r['poste'] ?? '') ?>
                     </div>
+                    <?php
+                    $hasCreated = !empty($r['fiche_created_at']);
+                    $hasUpdated = !empty($r['fiche_updated_at']) && $r['fiche_updated_at'] !== $r['fiche_created_at'];
+                    if ($hasCreated || $hasUpdated) {
+                      echo '<div class="small text-muted mt-1" style="font-size: 0.85em; line-height:1.2;">';
+                      if ($hasCreated) {
+                        echo '<span title="Date de création"><i class="bi bi-calendar-plus"></i> ' . date('d/m/Y H:i', strtotime($r['fiche_created_at'])) . '</span>';
+                      }
+                      if ($hasUpdated) {
+                        echo ' <span title="Dernière modification"><i class="bi bi-pencil"></i> ' . date('d/m/Y H:i', strtotime($r['fiche_updated_at'])) . '</span>';
+                      }
+                      echo '</div>';
+                    }
+                    ?>
+                    <!-- Date de modification déplacée en bas -->
+                                      <div class="small text-secondary mt-1" style="font-size:0.85em;">
+                                        <i class="bi bi-clock-history me-1"></i>
+                                        Modifié le : <?= isset($r['fiche_updated_at']) ? date('d/m/Y H:i', strtotime($r['fiche_updated_at'])) : '-' ?>
+                                      </div>
                   </div>
 
                   <div class="small mb-3">

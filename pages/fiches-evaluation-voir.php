@@ -31,11 +31,14 @@ $periode_fin = $_GET['fin'] ?? '';
 $statut_filter = $_GET['statut'] ?? ''; // complet | attente | encours
 
 /* ---------- Fetch fiches ---------- */
+
+// Ajout des dates de création et modification
 $sql = "SELECT o.id, o.periode, o.nom_projet, o.poste, o.date_commencement, o.statut,
-               o.superviseur_id, u.nom AS sup_nom, u.post_nom AS sup_post_nom
-        FROM objectifs o
-        LEFT JOIN users u ON o.superviseur_id = u.id
-        WHERE o.user_id = :user_id";
+         o.superviseur_id, u.nom AS sup_nom, u.post_nom AS sup_post_nom,
+         o.created_at AS fiche_created_at, o.updated_at AS fiche_updated_at
+  FROM objectifs o
+  LEFT JOIN users u ON o.superviseur_id = u.id
+  WHERE o.user_id = :user_id";
 $params = [':user_id' => $user_id];
 
 if ($search !== '') {
@@ -475,6 +478,33 @@ $csrf = ensure_csrf();
                   <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo $aPerc; ?>%" title="Atteint <?php echo $aPerc; ?>%"></div>
                   <div class="progress-bar bg-danger" role="progressbar" style="width: <?php echo $nPerc; ?>%" title="Non atteint <?php echo $nPerc; ?>%"></div>
                 </div>
+                <!-- Dates de soumission et modification, discret en bas à droite -->
+                <div class="d-flex justify-content-end align-items-center mt-2 mb-1">
+                  <small class="text-secondary d-flex align-items-center gap-2" style="font-size:0.85em;">
+                    <span title="Date de soumission">
+                      <i class="bi bi-upload me-1" style="font-size:1em;opacity:0.7;"> Soumise le</i>
+                        <?php
+                        $hasCreated = !empty($f['fiche_created_at']);
+                        $hasUpdated = !empty($f['fiche_updated_at']) && $f['fiche_updated_at'] !== $f['fiche_created_at'];
+                        if ($hasCreated || $hasUpdated) {
+                          echo '<span class="small text-muted" style="font-size:0.85em;line-height:1.2;">';
+                          if ($hasCreated) {
+                            echo '<i class="bi bi-calendar-plus"></i> ' . date('d/m/Y', strtotime($f['fiche_created_at']));
+                          }
+                          if ($hasUpdated) {
+                            echo ' <i class="bi bi-pencil"></i> ' . date('d/m/Y', strtotime($f['fiche_updated_at']));
+                          }
+                          echo '</span>';
+                        }
+                        ?>
+                    </span>
+                    <span class="mx-1" style="opacity:0.5;">·</span>
+                    <span title="Date de modification">
+                      <i class="bi bi-pencil-square me-1" style="font-size:1em;opacity:0.7;"></i>
+                      <!-- Affichage modif inclus dans la ligne compacte ci-dessus -->
+                    </span>
+                  </small>
+                </div>
                 <div class="mt-auto d-flex gap-2 flex-wrap">
                   <a href="fiche-evaluation.php?id=<?php echo $id; ?>" class="btn btn-sm btn-primary" title="Ouvrir" style="border-radius: 8px;">
                     <i class="bi bi-eye me-1"></i>Ouvrir
@@ -614,7 +644,7 @@ document.getElementById('btnConfirmDelete').addEventListener('click', function()
   const original = btn.innerHTML;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Suppression...';
   const body = 'fiche_id=' + encodeURIComponent(ficheToDelete.id) + '&csrf_token=' + encodeURIComponent('<?= $csrf ?>');
-  fetch('pages/fiche-evaluation-supprimer.php', {
+  fetch('fiche-supprimer.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body,
@@ -622,7 +652,8 @@ document.getElementById('btnConfirmDelete').addEventListener('click', function()
   })
   .then(async resp => {
     let data = null;
-    try { data = await resp.json(); } catch(e) { data = null; }
+    let raw = await resp.text();
+    try { data = JSON.parse(raw); } catch(e) { data = null; }
     if (resp.ok && data && data.ok) {
       showToast('success', data.message || 'Fiche supprimée');
       new bootstrap.Modal(document.getElementById('modalDeleteFiche')).hide();
@@ -631,7 +662,15 @@ document.getElementById('btnConfirmDelete').addEventListener('click', function()
     }
     if (resp.status === 423 && data) showToast('warning', data.message || 'Suppression refusée : fiche verrouillée', 7000);
     else if (resp.status === 403) showToast('danger', data && data.error ? data.error : 'Non autorisé', 7000);
-    else showToast('danger', (data && data.error) ? data.error : ('Erreur ' + resp.status), 7000);
+    else {
+      showToast('danger',
+        'Erreur HTTP ' + resp.status +
+        '<div style="max-height:120px;overflow:auto;font-size:0.85em;background:#f8f9fa;border-radius:6px;padding:6px 8px;margin-top:4px;">'+
+        raw.replace(/</g,'&lt;').replace(/>/g,'&gt;')+
+        '</div>',
+        12000
+      );
+    }
   })
   .catch(err => { console.error(err); showToast('danger', 'Erreur réseau lors de la suppression', 7000); })
   .finally(()=>{ btn.disabled = false; btn.innerHTML = original; ficheToDelete = null; });

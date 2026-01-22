@@ -11,6 +11,7 @@ if (file_exists($configPath)) {
     // Utiliser la config personnalisée (production ou local)
     $config = require $configPath;
     $host = $config['host'] ?? 'localhost';
+    $port = $config['port'] ?? null;
     $dbname = $config['dbname'] ?? 'fosip_evaluation';
     $username = $config['username'] ?? 'root';
     $password = $config['password'] ?? '';
@@ -23,9 +24,14 @@ if (file_exists($configPath)) {
 }
 
 try {
+    $dsn = "mysql:host=$host";
+    if (!empty($port)) {
+        $dsn .= ";port=$port";
+    }
+    $dsn .= ";dbname=$dbname;charset=utf8mb4";
     $pdo = new PDO(
-        "mysql:host=$host;dbname=$dbname;charset=utf8mb4", 
-        $username, 
+        $dsn,
+        $username,
         $password,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

@@ -40,13 +40,11 @@ function hasLockEntry(PDO $pdo, string $table, int $fiche_id, string $col = 'fic
   catch (Throwable $e) { return false; }
 }
 
-// Charge la fiche et vérifie propriété
-$stmt = $pdo->prepare("
-  SELECT o.*, u.nom AS sup_nom, u.post_nom AS sup_post_nom, u.fonction AS sup_fonction
+$sql = "SELECT o.*, u.nom AS sup_nom, u.post_nom AS sup_post_nom, u.fonction AS sup_fonction, o.created_at AS fiche_created_at, o.updated_at AS fiche_updated_at
   FROM objectifs o
   LEFT JOIN users u ON o.superviseur_id = u.id
-  WHERE o.id = ? AND o.user_id = ? LIMIT 1
-");
+  WHERE o.id = ? AND o.user_id = ? LIMIT 1";
+$stmt = $pdo->prepare($sql);
 $stmt->execute([$fiche_id, $user_id]);
 $fiche = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$fiche) { echo '<div class="alert alert-danger">Fiche introuvable ou non autorisée.</div>'; include('../includes/footer.php'); exit; }
@@ -139,6 +137,21 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
                 <div class="mt-2"><?= $verrou_coordination ? '<span class="badge bg-info text-dark">La coordination a commenté</span>' : '<span class="badge bg-light text-muted">Pas de commentaire</span>' ?></div>
               </div>
               <h3 class="mb-0">Fiche d'évaluation — <?= htmlspecialchars($fiche['periode']) ?></h3>
+                <?php
+                $hasCreated = !empty($fiche['fiche_created_at']);
+                $hasUpdated = !empty($fiche['fiche_updated_at']) && $fiche['fiche_updated_at'] !== $fiche['fiche_created_at'];
+                if ($hasCreated || $hasUpdated) {
+                  echo '<div class="small text-muted mt-1" style="font-size: 0.85em; line-height:1.2;">';
+                  if ($hasCreated) {
+                    echo '<span title="Date de création"><i class="bi bi-calendar-plus"></i> ' . date('d/m/Y H:i', strtotime($fiche['fiche_created_at'])) . '</span>';
+                  }
+                  if ($hasUpdated) {
+                    echo ' <span title="Dernière modification"><i class="bi bi-pencil"></i> ' . date('d/m/Y H:i', strtotime($fiche['fiche_updated_at'])) . '</span>';
+                  }
+                  echo '</div>';
+                }
+                ?>
+              <!-- Date de modification déplacée en bas -->
               <div class="small-muted mt-2"> Cette fiche synthétise vos objectifs pour la période indiquée et les résumés attendus. Remplissez les rubriques "résumés" pour aider votre superviseur et la coordination à comprendre vos réalisations, difficultés et besoins de soutien. </div>
             </div>
             <div class="text-end ms-3">
@@ -255,6 +268,13 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
     </div>
   </div>
 </div>
+      <!-- Date de modification en bas -->
+      <div class="d-flex justify-content-end mt-2">
+        <div class="small text-secondary" style="font-size:0.85em;">
+          <i class="bi bi-clock-history me-1"></i>
+          <!-- Affichage modif inclus dans la ligne compacte ci-dessus -->
+        </div>
+      </div>
 
 <!-- MAIN: left column holds Objectifs + Auto-eval (same width); right column holds Résumés -->
 <div class="row g-3">

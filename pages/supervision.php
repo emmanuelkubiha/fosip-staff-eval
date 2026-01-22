@@ -52,10 +52,8 @@ $periode = trim((string)($_GET['periode'] ?? ''));
 // Filtre de statut (pending=non complétées, done=complétées, all=toutes)
 $filter = $_GET['statut'] ?? 'encours'; // Nouveau jeu de filtres: a-evaluer | evalue | termine | all
 
-// Requête principale : on récupère toutes les fiches des agents rattachés au superviseur
-// LEFT JOIN permet de savoir si la supervision existe déjà ou pas
 $sql = "SELECT 
-          o.id AS fiche_id, o.periode, o.nom_projet, o.poste, o.statut AS fiche_statut,
+          o.id AS fiche_id, o.periode, o.nom_projet, o.poste, o.statut AS fiche_statut, o.created_at AS fiche_created_at, o.updated_at AS fiche_updated_at,
           a.id AS agent_id, a.nom AS agent_nom, a.post_nom AS agent_post_nom, a.photo AS agent_photo,
           s.id AS supervision_id, s.statut AS sup_statut, s.note AS sup_note, s.commentaire AS sup_commentaire, s.date_validation
         FROM objectifs o
@@ -231,6 +229,59 @@ if (!empty($ficheIds)) {
                 <div class="flex-grow-1" style="min-width:0;">
                   <h6 class="mb-1 fw-bold text-truncate" style="color:#2d3748;"><?= htmlspecialchars($agentNom) ?></h6>
                   <span class="badge bg-<?= $badge ?>" style="font-size:0.7rem;padding:4px 10px;border-radius:12px;"><?= $label ?></span>
+                  <div class="small text-muted mt-1">Soumise le : <?= isset($r['fiche_created_at']) ? date('d/m/Y H:i', strtotime($r['fiche_created_at'])) : '-' ?></div>
+                  <?php
+                  // Dates de la supervision (évaluation) — compact
+                  if (!empty($r['supervision_id'])) {
+                    $stS = $pdo->prepare('SELECT created_at, updated_at, date_validation FROM supervisions WHERE id = ?');
+                    $stS->execute([$r['supervision_id']]);
+                    $rowS = $stS->fetch(PDO::FETCH_ASSOC);
+                    $dates = [];
+                    if ($rowS) {
+                      if (!empty($rowS['created_at'])) $dates[] = '<i class="bi bi-calendar-plus me-1"></i>'.date('d/m/Y', strtotime($rowS['created_at']));
+                      if (!empty($rowS['updated_at']) && $rowS['updated_at'] !== $rowS['created_at']) $dates[] = '<i class="bi bi-pencil-square me-1"></i>'.date('d/m/Y', strtotime($rowS['updated_at']));
+                      if (!empty($rowS['date_validation'])) $dates[] = '<i class="bi bi-check2-circle me-1"></i>'.date('d/m/Y', strtotime($rowS['date_validation']));
+                    }
+                    if ($dates) echo '<div class="text-secondary" style="font-size:0.70em;line-height:1.1;">Éval. : '.implode(' · ', $dates).'</div>';
+                  }
+                  // Dates du dernier commentaire coordination — compact
+                  $ficheId = (int)($r['fiche_id'] ?? 0);
+                  if ($ficheStatut === 'termine' && $ficheId) {
+                    $stC = $pdo->prepare('SELECT created_at, updated_at FROM coordination_commentaires WHERE fiche_id = ? ORDER BY GREATEST(COALESCE(updated_at, "0000-00-00"), COALESCE(created_at, "0000-00-00")) DESC LIMIT 1');
+                    $stC->execute([$ficheId]);
+                    $rowCom = $stC->fetch(PDO::FETCH_ASSOC);
+                    $datesC = [];
+                    if ($rowCom) {
+                      if (!empty($rowCom['created_at'])) $datesC[] = '<i class="bi bi-chat-left-text me-1"></i>'.date('d/m/Y', strtotime($rowCom['created_at']));
+                      if (!empty($rowCom['updated_at']) && $rowCom['updated_at'] !== $rowCom['created_at']) $datesC[] = '<i class="bi bi-pencil me-1"></i>'.date('d/m/Y', strtotime($rowCom['updated_at']));
+                    }
+                    if ($datesC) echo '<div class="text-secondary" style="font-size:0.70em;line-height:1.1;">Com. : '.implode(' · ', $datesC).'</div>';
+                  }
+                  ?>
+                  <?php
+                  // Date de dernière évaluation (supervision)
+                  if (!empty($r['sup_statut']) && !empty($r['sup_statut']) && !empty($r['supervision_id'])) {
+                    $dateEval = $r['date_validation'] ?? $r['fiche_updated_at'] ?? null;
+                    if ($dateEval) {
+                      echo '<div class="text-secondary" style="font-size:0.70em;line-height:1.1;">';
+                      echo '<i class="bi bi-check2-circle me-1"></i>Évalué le '.date('d/m/Y', strtotime($dateEval));
+                      echo '</div>';
+                    }
+                  }
+                  // Date de commentaire coordination (table coordination_commentaires)
+                  $ficheId = (int)($r['fiche_id'] ?? 0);
+                  if ($ficheStatut === 'termine' && $ficheId) {
+                    $stC = $pdo->prepare('SELECT date_commentaire FROM coordination_commentaires WHERE fiche_id = ? ORDER BY date_commentaire DESC LIMIT 1');
+                    $stC->execute([$ficheId]);
+                    $dateCom = $stC->fetchColumn();
+                    if ($dateCom) {
+                      echo '<div class="text-secondary" style="font-size:0.70em;line-height:1.1;">';
+                      echo '<i class="bi bi-chat-left-text me-1"></i>Commenté le '.date('d/m/Y', strtotime($dateCom));
+                      echo '</div>';
+                    }
+                  }
+                  ?>
+                  <!-- Date de modification déplacée en bas -->
                 </div>
               </div>
 
@@ -255,6 +306,11 @@ if (!empty($ficheIds)) {
                   <div>
                     <span class="small text-muted">Période:</span>
                     <span class="small fw-semibold ms-1" style="color:#2d3748;"><?= htmlspecialchars($r['periode'] ?? '') ?></span>
+                    <div class="small text-muted mt-1">Soumise le : <?= isset($r['fiche_created_at']) ? date('d/m/Y H:i', strtotime($r['fiche_created_at'])) : '-' ?></div>
+                    <div class="small text-secondary mt-1" style="font-size:0.85em;">
+                      <i class="bi bi-clock-history me-1"></i>
+                      Modifié le : <?= isset($r['fiche_updated_at']) ? date('d/m/Y H:i', strtotime($r['fiche_updated_at'])) : '-' ?>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -297,7 +353,7 @@ if (!empty($ficheIds)) {
                         data-fiche-id="<?= (int)$r['fiche_id'] ?>"
                         data-agent-nom="<?= htmlspecialchars($agentNom, ENT_QUOTES) ?>"
                         style="border-radius:10px;">
-                  <i class="bi bi-trash me-1"></i> Supprimer
+                  <i class="bi bi-trash me-1"></i> Annuler l'évaluation
                 </button>
               </div>
             </div>

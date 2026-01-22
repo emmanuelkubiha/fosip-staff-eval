@@ -8,7 +8,17 @@
 # ========================================
 # Active le module de réécriture d'URL
 # Ce module permet de modifier les URLs avant qu'elles soient traitées
+
+# ========================================
+# Gestion automatique local/production
+# ========================================
 RewriteEngine On
+
+# Bloquer l'accès aux fichiers sensibles (production)
+<FilesMatch "(config\.php|\.git|\.env|\.gitignore|composer\.json|CHANGELOG\.md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
 
 # Désactive la redirection HTTPS en local (décommente uniquement en production)
 # RewriteCond %{HTTPS} off
@@ -123,6 +133,7 @@ Options -Indexes
 # /pages/404.php = votre page d'erreur personnalisée (à créer si nécessaire)
 # Avantage : Message d'erreur personnalisé au lieu de la page Apache par défaut
 ErrorDocument 404 /pages/404.php
+ErrorDocument 500 /pages/500.php
 
 # ========================================
 # Notes de configuration
