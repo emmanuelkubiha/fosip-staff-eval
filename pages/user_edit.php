@@ -1,7 +1,7 @@
 <?php
 include('../includes/auth.php');
 include('../includes/db.php');
-include('../includes/header.php');
+
 
 // Récupère l'ID depuis l'URL
 $id = $_GET['id'] ?? null;
@@ -17,9 +17,11 @@ $user = $stmt->fetch();
 
 if (!$user) {
   echo "<div class='alert alert-danger'>Utilisateur introuvable.</div>";
+  include('../includes/header.php');
   include('../includes/footer.php');
   exit;
 }
+
 
 // Traitement du formulaire
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -53,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   header('Location: users.php');
   exit;
 }
+
+include('../includes/header.php');
 ?>
 
 <div class="row">
