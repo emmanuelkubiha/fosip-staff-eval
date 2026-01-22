@@ -44,12 +44,30 @@ $sql = "SELECT
         JOIN users a ON a.id = o.user_id AND a.superviseur_id = :sid
         LEFT JOIN supervisions s ON s.agent_id = o.user_id AND s.periode = o.periode AND s.superviseur_id = :sid
         WHERE 1 = 1";
-$params = [':sid'=>$superviseur_id];
-if ($search !== '') { $sql .= " AND (a.nom LIKE :s OR a.post_nom LIKE :s OR o.nom_projet LIKE :s OR o.poste LIKE :s OR o.periode LIKE :s)"; $params[':s']="%$search%"; }
-if ($periode !== '') { $sql .= " AND o.periode = :p"; $params[':p']=$periode; }
+
+$params = [':sid' => $superviseur_id];
+if ($search !== '') {
+  $sql .= " AND (a.nom LIKE :s OR a.post_nom LIKE :s OR o.nom_projet LIKE :s OR o.poste LIKE :s OR o.periode LIKE :s)";
+  $params[':s'] = "%$search%";
+}
+if ($periode !== '') {
+  $sql .= " AND o.periode = :p";
+  $params[':p'] = $periode;
+}
 $sql .= " ORDER BY a.nom ASC, a.post_nom ASC, o.periode DESC, o.id DESC";
 
-$st = $pdo->prepare($sql); $st->execute($params); $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+// Vérification stricte des paramètres :
+// On ne garde dans $params que les clés présentes dans la requête
+$finalParams = [];
+foreach ($params as $k => $v) {
+  if (strpos($sql, $k) !== false) {
+    $finalParams[$k] = $v;
+  }
+}
+
+$st = $pdo->prepare($sql);
+$st->execute($finalParams);
+$rows = $st->fetchAll(PDO::FETCH_ASSOC);
 
 // Préparer agrégations: nombre d'items par fiche, distribution auto‑évaluation
 $ficheIds = array_map(fn($r)=> (int)$r['fiche_id'], $rows);
