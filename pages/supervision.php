@@ -59,11 +59,11 @@ $sql = "SELECT
           a.id AS agent_id, a.nom AS agent_nom, a.post_nom AS agent_post_nom, a.photo AS agent_photo,
           s.id AS supervision_id, s.statut AS sup_statut, s.note AS sup_note, s.commentaire AS sup_commentaire, s.date_validation
         FROM objectifs o
-        JOIN users a ON a.id = o.user_id AND a.superviseur_id = :sid
+        JOIN users a ON a.id = o.user_id AND a.superviseur_id = :sid1
         LEFT JOIN supervisions s 
-          ON s.agent_id = o.user_id AND s.superviseur_id = :sid AND s.periode = o.periode
+          ON s.agent_id = o.user_id AND s.superviseur_id = :sid2 AND s.periode = o.periode
         WHERE 1 = 1";
-$params = [':sid'=>$superviseur_id];
+$params = [':sid1'=>$superviseur_id, ':sid2'=>$superviseur_id];
 
 // Recherche multi-champs (projet, poste, nom agent, période)
 if ($search !== '') {
@@ -114,10 +114,13 @@ if (!empty($ficheIds)) {
 
 ?>
 <div class="row">
-  <div class="col-md-3">
-    <?php include('../includes/sidebar.php'); ?>
+  <div class="col-md-3 sidebar-col">
+    <div class="sidebar-wrapper">
+      <?php include('../includes/sidebar.php'); ?>
+    </div>
   </div>
-  <div class="col-md-9">
+  <div class="col-md-9 content-col">
+    <div class="container mt-4">
     <div class="container mt-4">
 
       <!-- En-tête moderne -->
