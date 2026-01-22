@@ -1,0 +1,74 @@
+# ========================================
+# Fichiers de configuration sensibles
+# ========================================
+config.php    # ❌ Ne JAMAIS versionner ce fichier (contient mots de passe DB)
+.env          # ❌ Fichier d'environnement (alternative à config.php)
+
+# ========================================
+# Photos de profil uploadées (sauf default.png)
+# ========================================
+assets/img/profiles/*              # ❌ Ignorer TOUT dans profiles/
+!assets/img/profiles/default.png   # ✅ SAUF default.png (exception)
+!assets/img/profiles/.gitkeep      # ✅ ET .gitkeep (pour créer le dossier)
+
+# ========================================
+# Logs et fichiers temporaires
+# ========================================
+*.log
+error_log
+php_errors.log
+debug.log
+
+# ========================================
+# Fichiers système et éditeurs
+# ========================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ========================================
+# Sauvegardes de base de données
+# ========================================
+# *.sql
+backups/
+
+# ========================================
+# Fichiers de cache
+# ========================================
+cache/
+temp/
+tmp/
+
+# ========================================
+# Inclure explicitement les fichiers principaux du dossier racine
+# ========================================
+!index.php
+!loading.php
+!.htaccess
+!README.md
+!CHANGELOG.md
+
+# ========================================
+# Inclure tous les fichiers PHP du dossier racine
+# ========================================
+!/*.php
+
+# ========================================
+# Inclure tous les fichiers du dossier racine sauf ceux ignorés ci-dessus
+# ========================================
+!/*
+
+# ========================================
+# Inclure explicitement la licence
+# ========================================
+!LICENSE.md
+
+# ========================================
+# Inclure explicitement le dossier pages et bd
+# ========================================
+!pages/
+!bd/

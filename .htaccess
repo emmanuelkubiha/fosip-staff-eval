@@ -1,0 +1,139 @@
+# ========================================
+# Configuration Apache pour FOSIP Staff Performance Suite
+# Ce fichier contrôle la sécurité et le comportement du serveur web
+# ========================================
+
+# ========================================
+# Forcer HTTPS (connexion sécurisée)
+# ========================================
+# Active le module de réécriture d'URL
+# Ce module permet de modifier les URLs avant qu'elles soient traitées
+RewriteEngine On
+
+# Désactive la redirection HTTPS en local (décommente uniquement en production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ========================================
+# Bloquer l'accès aux fichiers sensibles
+# ========================================
+# Désactive le blocage en local (commente ce bloc)
+# <FilesMatch "(config\.php|\.git|\.env|\.gitignore|composer\.json|CHANGELOG\.md)$">
+#     Order allow,deny
+#     Deny from all
+# </FilesMatch>
+
+# ========================================
+# Désactiver le listing des répertoires
+# ========================================
+# Options -Indexes = empêche Apache d'afficher la liste des fichiers d'un dossier
+# Sans cette ligne : https://eval.fosip-drc.org/assets/img/ afficherait tous les fichiers
+# Avec cette ligne : Erreur 403 Forbidden
+# Sécurité : empêche l'exploration non autorisée de la structure du site
+Options -Indexes
+
+# ========================================
+# Protection XSS et injection
+# ========================================
+# mod_headers = module Apache pour ajouter des en-têtes HTTP personnalisés
+# Ces en-têtes protègent contre les attaques courantes
+<IfModule mod_headers.c>
+    # X-XSS-Protection : Active la protection contre les attaques XSS (Cross-Site Scripting)
+    # "1; mode=block" = bloquer complètement les scripts malveillants détectés
+    # Exemple d'attaque bloquée : <script>alert('Hack')</script> dans un paramètre URL
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # X-Content-Type-Options : Empêche le navigateur de "deviner" le type MIME d'un fichier
+    # "nosniff" = force le navigateur à respecter le Content-Type déclaré par le serveur
+    # Exemple : Un fichier .txt contenant du HTML ne sera PAS exécuté comme HTML
+    Header set X-Content-Type-Options "nosniff"
+    
+    # X-Frame-Options : Empêche le site d'être intégré dans une iframe sur un autre domaine
+    # "SAMEORIGIN" = autorise les iframes uniquement depuis eval.fosip-drc.org
+    # Protection contre le clickjacking (piège où l'utilisateur clique sans le savoir)
+    # Exemple bloqué : Un site pirate ne peut pas afficher votre page de login dans une iframe cachée
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Referrer-Policy : Contrôle les informations envoyées dans l'en-tête Referer
+    # "strict-origin-when-cross-origin" = envoie seulement le domaine (pas l'URL complète) vers les sites externes
+    # Exemple : Si l'utilisateur clique sur un lien vers Google depuis /pages/dashboard.php?user_id=123
+    # Google reçoit : https://eval.fosip-drc.org (sans le ?user_id=123)
+    # Sécurité : évite la fuite d'informations sensibles dans les URLs
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ========================================
+# Protection contre les injections SQL dans l'URL
+# ========================================
+# Détecte et bloque les tentatives d'injection de code malveillant dans les paramètres URL
+<IfModule mod_rewrite.c>
+    # Condition 1 : Bloquer les balises <script> dans les paramètres
+    # (\<|%3C) = détecte < ou %3C (version encodée de <)
+    # %{QUERY_STRING} = tout ce qui est après le ? dans l'URL
+    # [NC,OR] = NC=No Case (insensible à la casse), OR=OU logique
+    # Exemple bloqué : ?search=<script>alert('hack')</script>
+    RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+    
+    # Condition 2 : Bloquer l'accès à la variable globale GLOBALS de PHP
+    # GLOBALS = tableau PHP contenant toutes les variables globales
+    # Exemple d'attaque : ?GLOBALS[user_id]=1 pour forcer une variable
+    # (=|\[|\%[0-9A-Z]{0,2}) = détecte = ou [ ou leur version encodée
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    
+    # Condition 3 : Bloquer l'accès à _REQUEST (tableau PHP des données POST/GET/COOKIE)
+    # Exemple d'attaque : ?_REQUEST[admin]=true pour forcer l'accès admin
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+    
+    # Action si une des conditions ci-dessus est vraie :
+    # .* = toute URL
+    # - = ne pas réécrire l'URL
+    # [F,L] = F=Forbidden (erreur 403), L=Last (dernière règle)
+    # Résultat : Le pirate reçoit une erreur 403 Forbidden
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ========================================
+# Durée de cache pour ressources statiques
+# ========================================
+# Le cache du navigateur évite de re-télécharger les fichiers qui n'ont pas changé
+# Avantage : Site plus rapide, moins de bande passante consommée
+<IfModule mod_expires.c>
+    # Active la gestion du cache
+    ExpiresActive On
+    
+    # Images : cache de 1 mois
+    # Raison : Les images changent rarement
+    # Gain : 1ère visite = télécharge logo.png (100 Ko), visites suivantes = 0 Ko
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    
+    # CSS et JavaScript : cache de 1 semaine
+    # Raison : Peuvent être modifiés lors des mises à jour du site
+    # "access plus 1 week" = le navigateur garde le fichier 7 jours avant de le redemander
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+
+# ========================================
+# Page d'erreur personnalisée
+# ========================================
+# ErrorDocument 404 = définit la page affichée quand une URL n'existe pas
+# /pages/404.php = votre page d'erreur personnalisée (à créer si nécessaire)
+# Avantage : Message d'erreur personnalisé au lieu de la page Apache par défaut
+ErrorDocument 404 /pages/404.php
+
+# ========================================
+# Notes de configuration
+# ========================================
+# Ce fichier .htaccess s'applique au dossier fosip-eval et tous ses sous-dossiers
+# Pour tester si une règle fonctionne :
+# 1. Essayez d'accéder à https://eval.fosip-drc.org/config.php → devrait donner 403
+# 2. Essayez http://eval.fosip-drc.org → devrait rediriger vers https:// (si décommenté)
+# 3. Essayez https://eval.fosip-drc.org/assets/img/ → devrait donner 403 (pas de listing)
+#
+# En cas de problème (page blanche, erreur 500) :
+# 1. Renommez ce fichier en .htaccess.bak pour désactiver les règles
+# 2. Réactivez une section à la fois pour identifier le problème
+# 3. Vérifiez que mod_rewrite et mod_headers sont activés sur votre serveur LWS
