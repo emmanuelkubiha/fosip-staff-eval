@@ -385,20 +385,41 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
                     $itemId = (int)$item['id'];
                     $auto = $autoEval[$itemId] ?? null;
                     $cote = $cotes[$itemId] ?? null;
+                    // Affichage auto-évaluation : afficher la valeur brute de la BD (niveau_realisation), sinon 'Non renseigné'
                   ?>
                   <tr>
                     <td class="fw-bold"><?= $idx + 1 ?></td>
                     <td><?= htmlspecialchars($item['contenu']) ?></td>
                     <td>
-                      <?php if ($auto): ?>
-                        <div class="small">
-                          <strong>Réalisé :</strong> <?= htmlspecialchars($auto['niveau_realisation'] ?? '—') ?><br>
-                          <?php if (!empty($auto['commentaire'])): ?>
-                            <em class="text-muted"><?= htmlspecialchars($auto['commentaire']) ?></em>
-                          <?php endif; ?>
-                        </div>
-                      <?php else: ?>
-                        <span class="text-muted">Non évalué</span>
+                      <div class="bg-light border rounded py-2 px-3 mb-1 d-flex align-items-center gap-2" style="font-size:0.95em;">
+                        <?php
+                          $icon = 'bi-dash-circle';
+                          $icon_color = 'text-secondary';
+                          $label = 'Non renseigné';
+                          $title = '';
+                          if (isset($auto['note']) && $auto['note'] !== null && $auto['note'] !== '') {
+                            switch ($auto['note']) {
+                              case 'depasse':
+                                $icon = 'bi-arrow-up-circle-fill'; $icon_color = 'text-success'; $label = 'Dépassé'; $title = "L'objectif a été dépassé";
+                                break;
+                              case 'atteint':
+                                $icon = 'bi-check-circle-fill'; $icon_color = 'text-warning'; $label = 'Atteint'; $title = "Objectif atteint";
+                                break;
+                              case 'non_atteint':
+                                $icon = 'bi-x-circle-fill'; $icon_color = 'text-danger'; $label = 'Non atteint'; $title = "Objectif non atteint";
+                                break;
+                              default:
+                                $icon = 'bi-dash-circle'; $icon_color = 'text-secondary'; $label = htmlspecialchars($auto['note']); $title = "Statut non reconnu";
+                            }
+                          } else {
+                            $title = "Aucune auto-évaluation renseignée";
+                          }
+                        ?>
+                        <i class="bi <?= $icon ?> <?= $icon_color ?>" style="font-size:1.2em;" title="<?= htmlspecialchars($title) ?>" aria-label="<?= htmlspecialchars($label) ?>"></i>
+                        <span class="fw-semibold <?= $icon_color ?>"> <?= $label ?> </span>
+                      </div>
+                      <?php if (isset($auto) && array_key_exists('commentaire', $auto) && trim($auto['commentaire']) !== ''): ?>
+                        <div class="small ms-2"><em><?= htmlspecialchars($auto['commentaire']) ?></em></div>
                       <?php endif; ?>
                     </td>
                     <td>
@@ -424,11 +445,35 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
               </table>
             </div>
             <?php if ($moyenneNote !== null): ?>
-              <div class="alert alert-light border mt-3">
-                <i class="bi bi-calculator me-2"></i>
-                <strong>Moyenne générale des objectifs :</strong> 
-                <span class="badge bg-secondary ms-2"><?= $moyenneNote ?>/20</span>
-                <span class="badge bg-secondary ms-1"><?= $moyennePourcent ?>%</span>
+              <?php
+                // Couleur dynamique selon le pourcentage
+                $moyenneColor = 'danger';
+                $moyenneIcon = 'bi-exclamation-octagon-fill';
+                $moyenneLabel = 'Faible';
+                if ($moyennePourcent >= 80) {
+                  $moyenneColor = 'success';
+                  $moyenneIcon = 'bi-trophy-fill';
+                  $moyenneLabel = 'Excellente';
+                } elseif ($moyennePourcent >= 50) {
+                  $moyenneColor = 'warning';
+                  $moyenneIcon = 'bi-star-fill';
+                  $moyenneLabel = 'Moyenne';
+                }
+              ?>
+              <div class="alert alert-<?= $moyenneColor ?> d-flex align-items-center justify-content-between border mt-3" style="font-size:1.15em;">
+                <div>
+                  <i class="bi <?= $moyenneIcon ?> me-2" style="font-size:1.5em;"></i>
+                  <strong>Moyenne générale des objectifs :</strong>
+                  <span class="badge bg-<?= $moyenneColor ?> ms-2" style="font-size:1.1em; padding:7px 16px;">
+                    <?= $moyenneNote ?>/20
+                  </span>
+                  <span class="badge bg-<?= $moyenneColor ?> ms-1" style="font-size:1.1em; padding:7px 16px;">
+                    <?= $moyennePourcent ?>%
+                  </span>
+                </div>
+                <span class="fw-bold text-<?= $moyenneColor ?> ms-3" style="font-size:1.1em;">
+                  <?= $moyenneLabel ?>
+                </span>
               </div>
             <?php endif; ?>
           <?php endif; ?>
