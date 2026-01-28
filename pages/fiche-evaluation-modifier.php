@@ -3,10 +3,10 @@
 // Modifier une fiche d'évaluation (GET affiche, POST traite la sauvegarde)
 // Affichage du résultat via toast Bootstrap (info-bulle JS).
 
+
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once('../includes/db.php'); // $pdo attendu
 $current_page = 'mes-objectifs.php';
-include('../includes/header.php'); // doit inclure Bootstrap CSS/JS bundle + Bootstrap Icons
 
 // ---------- helpers ----------
 function tableExists(PDO $pdo, string $table): bool {
@@ -111,6 +111,9 @@ if ($fiche_id <= 0) {
   include('../includes/footer.php'); exit;
 }
 
+// Inclure le header UNIQUEMENT après toutes les redirections
+include('../includes/header.php'); // doit inclure Bootstrap CSS/JS bundle + Bootstrap Icons
+
 // Charger fiche
 $st = $pdo->prepare("SELECT o.*, u.nom AS sup_nom, u.post_nom AS sup_post_nom FROM objectifs o LEFT JOIN users u ON o.superviseur_id = u.id WHERE o.id = ? AND o.user_id = ? LIMIT 1");
 $st->execute([$fiche_id, $user_id]);
@@ -147,7 +150,7 @@ $token = csrf_token();
 
 <div class="row">
   <div class="col-md-3"><?php include('../includes/sidebar.php'); ?></div>
-  <div class="col-md-9">
+  <div class="col-lg-9" style="padding-left:7.5rem;">
     <div class="container mt-3">
       <h3><i class="bi bi-pencil-square me-1"></i> Modifier la fiche d'évaluation</h3>
 

@@ -14,6 +14,7 @@ function ensureCsrf($token) { return !empty($_SESSION['csrf_token']) && !empty($
 // auth + method
 if (empty($_SESSION['user_id'])) jsonError('Non autorisé', 401);
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonError('Méthode non autorisée', 405);
+// Sécurité : on ignore tout user_id transmis par le client, on prend toujours celui de la session
 $user_id = (int)$_SESSION['user_id'];
 
 $action = $_POST['action'] ?? 'save';

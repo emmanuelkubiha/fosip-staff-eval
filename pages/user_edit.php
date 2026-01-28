@@ -114,6 +114,7 @@ include('../includes/header.php');
               <label class="form-label">Rôle</label>
               <select name="role" class="form-select" required>
                 <option value="staff" <?= $user['role'] === 'staff' ? 'selected' : '' ?>>Staff</option>
+                <option value="superviseur" <?= $user['role'] === 'superviseur' ? 'selected' : '' ?>>Superviseur</option>
                 <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
                 <option value="coordination" <?= $user['role'] === 'coordination' ? 'selected' : '' ?>>Coordination</option>
               </select>
@@ -123,7 +124,11 @@ include('../includes/header.php');
               <select name="superviseur_id" class="form-select">
                 <option value="">-- Aucun --</option>
                 <?php
-                $superviseurs = $pdo->query("SELECT id, nom, post_nom FROM users WHERE role IN ('superviseur', 'coordination') ORDER BY nom, post_nom");
+                $current_id = $_SESSION['user_id'] ?? null;
+                $sql = "SELECT id, nom, post_nom FROM users WHERE role != 'admin'";
+                if ($current_id) $sql .= " AND id != " . intval($current_id);
+                $sql .= " ORDER BY nom, post_nom";
+                $superviseurs = $pdo->query($sql);
                 while ($s = $superviseurs->fetch()) {
                   $selected = $user['superviseur_id'] == $s['id'] ? 'selected' : '';
                   echo "<option value='{$s['id']}' $selected>" . htmlspecialchars($s['nom'] . ' ' . $s['post_nom']) . "</option>";

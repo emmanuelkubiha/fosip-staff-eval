@@ -331,7 +331,11 @@ include('../includes/header.php');
               <select name="superviseur_id" class="form-select">
                 <option value="">-- Aucun superviseur --</option>
                 <?php
-                $superviseurs = $pdo->query("SELECT id, nom, post_nom FROM users WHERE role IN ('superviseur', 'coordination') ORDER BY nom, post_nom");
+                $current_id = $_SESSION['user_id'] ?? null;
+                $sql = "SELECT id, nom, post_nom FROM users WHERE role != 'admin'";
+                if ($current_id) $sql .= " AND id != " . intval($current_id);
+                $sql .= " ORDER BY nom, post_nom";
+                $superviseurs = $pdo->query($sql);
                 while ($s = $superviseurs->fetch()) {
                   echo "<option value='{$s['id']}'>" . htmlspecialchars($s['nom'] . ' ' . $s['post_nom']) . "</option>";
                 }

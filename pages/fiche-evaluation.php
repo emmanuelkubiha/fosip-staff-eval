@@ -1,4 +1,20 @@
 <?php
+// DEBUG fetchAll auto_evaluation très tôt pour garantir l'affichage
+if (isset($pdo) && isset($_SESSION['user_id'])) {
+  $fiche_id_dbg = isset($_GET['id']) ? intval($_GET['id']) : 0;
+  $user_id_dbg = (int)$_SESSION['user_id'];
+  if ($fiche_id_dbg > 0 && tableExists($pdo, 'auto_evaluation')) {
+    try {
+      $stm_dbg = $pdo->prepare("SELECT * FROM auto_evaluation WHERE fiche_id = ? AND user_id = ?");
+      $stm_dbg->execute([$fiche_id_dbg, $user_id_dbg]);
+      $auto_rows_dbg = $stm_dbg->fetchAll(PDO::FETCH_ASSOC);
+      echo '<div style="background:#e0f7fa;border:2px solid #00bcd4;padding:10px;margin:10px 0;font-size:0.95em;">';
+      echo '<strong>DEBUG fetchAll auto_evaluation (top)</strong><br><pre style="white-space:pre-wrap;">';
+      var_dump($auto_rows_dbg);
+      echo '</pre></div>';
+    } catch (Throwable $e) { echo '<div style="color:red">Erreur debug auto_evaluation: '.htmlspecialchars($e->getMessage()).'</div>'; }
+  }
+}
 // pages/fiche-evaluation.php
 // Fichier complet : sidebar inclus, hero decoration, objectifs + auto-eval same column, résumés à droite.
 // Prérequis : includes/header.php charge Bootstrap 5 + Bootstrap Icons ; includes/db.php expose $pdo.
@@ -59,28 +75,23 @@ $verrou_competence_gest = hasLockEntry($pdo, 'competences_de_gestion', $fiche_id
 $verrou_qualites = hasLockEntry($pdo, 'qualites_de_leader', $fiche_id);
 $verrou_total = $verrou_superviseur || $verrou_coordination || $verrou_competence_ind || $verrou_competence_gest || $verrou_qualites;
 
-// Charger items
-$stmtItems = $pdo->prepare("SELECT * FROM objectifs_items WHERE fiche_id = ? ORDER BY ordre ASC");
-$stmtItems->execute([$fiche_id]);
+// Charger items et auto-évaluations en même temps
+$stmtItems = $pdo->prepare("SELECT i.*, ae.note as auto_note, ae.commentaire as auto_commentaire, ae.user_id as auto_user_id FROM objectifs_items i
+  LEFT JOIN auto_evaluation ae ON ae.item_id = i.id AND ae.fiche_id = i.fiche_id AND ae.user_id = ?
+  WHERE i.fiche_id = ? ORDER BY i.ordre ASC");
+$stmtItems->execute([$user_id, $fiche_id]);
 $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
-
-// Charger auto_evaluations existantes
-$auto_map_by_item = [];
-if (tableExists($pdo, 'auto_evaluation')) {
-  try {
-    $stm = $pdo->prepare("SELECT * FROM auto_evaluation WHERE fiche_id = ? AND user_id = ?");
-    $stm->execute([$fiche_id, $user_id]);
-    foreach ($stm->fetchAll(PDO::FETCH_ASSOC) as $r) $auto_map_by_item[(int)$r['item_id']] = $r;
-  } catch (Throwable $e) { error_log('load auto eval error: '.$e->getMessage()); }
-}
 
 // Champs résumés
 $resume_fields = [
   'resume_reussite','resume_amelioration','resume_problemes',
   'resume_competence_a_developper','resume_competence_a_utiliser','resume_soutien'
 ];
+
 $resume_count = 0; foreach ($resume_fields as $f) if (!empty($fiche[$f])) $resume_count++;
 $resume_total = count($resume_fields);
+
+// Plus de debug auto_map_by_item : tout est géré par le LEFT JOIN
 
 // CSRF token
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
@@ -373,11 +384,14 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
           <div class="row g-3">
             <?php foreach ($items as $idx => $it):
               $itemId = (int)$it['id'];
-              $ae = $auto_map_by_item[$itemId] ?? null;
+              // Utilisation des champs issus du LEFT JOIN
+              $auto_note = $it['auto_note'] ?? null;
+              $auto_commentaire = $it['auto_commentaire'] ?? '';
               $stateClass = 'text-muted'; $stateIcon = '<i class="bi bi-slash-circle" style="color:#6c757d"></i>'; $stateLabel = 'Indisponible';
-              if ($ae && !empty($ae['note'])) {
-                if ($ae['note']==='depasse') { $stateClass='text-success'; $stateIcon='<i class="bi bi-arrow-up-circle-fill" style="color:#198754"></i>'; $stateLabel='Dépasse'; }
-                elseif ($ae['note']==='atteint') { $stateClass='text-warning'; $stateIcon='<i class="bi bi-dash-circle-fill" style="color:#ffc107"></i>'; $stateLabel='Atteint'; }
+              // Suppression de toute référence à $ae (plus utilisé)
+              if (!empty($auto_note)) {
+                if ($auto_note==='depasse') { $stateClass='text-success'; $stateIcon='<i class="bi bi-arrow-up-circle-fill" style="color:#198754"></i>'; $stateLabel='Dépasse'; }
+                elseif ($auto_note==='atteint') { $stateClass='text-warning'; $stateIcon='<i class="bi bi-dash-circle-fill" style="color:#ffc107"></i>'; $stateLabel='Atteint'; }
                 else { $stateClass='text-danger'; $stateIcon='<i class="bi bi-arrow-down-circle-fill" style="color:#dc3545"></i>'; $stateLabel='Non atteint'; }
               }
             ?>
@@ -399,17 +413,18 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
                       <input type="hidden" name="fiche_id" value="<?= $fiche_id ?>">
                       <input type="hidden" name="item_id" value="<?= $itemId ?>">
 
+
                       <select name="note" class="form-select form-select-sm ae-select">
                         <option value="">-- Choisir --</option>
-                        <option value="non_atteint" <?= ($ae && $ae['note']==='non_atteint') ? 'selected' : '' ?>>Non atteint</option>
-                        <option value="atteint" <?= ($ae && $ae['note']==='atteint') ? 'selected' : '' ?>>Atteint</option>
-                        <option value="depasse" <?= ($ae && $ae['note']==='depasse') ? 'selected' : '' ?>>Dépasse</option>
+                        <option value="non_atteint" <?= ($auto_note==='non_atteint') ? 'selected' : '' ?>>Non atteint</option>
+                        <option value="atteint" <?= ($auto_note==='atteint') ? 'selected' : '' ?>>Atteint</option>
+                        <option value="depasse" <?= ($auto_note==='depasse') ? 'selected' : '' ?>>Dépasse</option>
                       </select>
 
-                      <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Commentaire (facultatif)" value="<?= htmlspecialchars($ae['commentaire'] ?? '') ?>">
+                      <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Commentaire (facultatif)" value="<?= htmlspecialchars($auto_commentaire) ?>">
 
-                      <button type="button" class="btn btn-sm btn-primary btn-save-ae" title="Enregistrer"><i class="bi bi-cloud-arrow-up"></i></button>
-                      <?php if ($ae): ?><button type="button" class="btn btn-sm btn-outline-danger btn-delete-ae" title="Supprimer"><i class="bi bi-trash"></i></button><?php endif; ?>
+                      <button type="button" class="btn btn-sm btn-success btn-save-ae" title="Enregistrer"><i class="bi bi-cloud-arrow-up"></i></button>
+                      <?php if (!empty($auto_note)): ?><button type="button" class="btn btn-sm btn-outline-danger btn-delete-ae" title="Supprimer"><i class="bi bi-trash"></i></button><?php endif; ?>
                     </form>
                   <?php else: ?>
                     <div class="small-muted">Saisie désactivée (fiche verrouillée)</div>

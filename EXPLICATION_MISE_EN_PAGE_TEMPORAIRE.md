@@ -8,10 +8,7 @@ Pour éviter le chevauchement entre la barre de navigation latérale (sidebar) e
 - pages/supervision-agent.php
 - pages/supervision-periode.php
 - pages/supervision-evaluer.php
-- pages/fiche-evaluation.php
-- pages/fiches-evaluation-voir.php
-- pages/profile.php
-- pages/aide.php
+- pages/fiche-evaluation-modifier.php
 
 ## Détail des changements
 - Ajout ou augmentation du `padding-left` (6rem à 7.5rem) sur la colonne principale (`col-md-9` ou `col-lg-9`) pour laisser la place à la sidebar.

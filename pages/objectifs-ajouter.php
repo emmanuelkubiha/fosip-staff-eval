@@ -21,8 +21,10 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $success = false;
 
-// Chargement des superviseurs
-$stmt = $pdo->query("SELECT id, nom, post_nom, fonction FROM users WHERE role IN ('superviseur', 'coordination') ORDER BY nom, post_nom");
+// Chargement des superviseurs (tous sauf admin et moi-même, avec photo)
+$user_id = $_SESSION['user_id'];
+$stmt = $pdo->prepare("SELECT id, nom, post_nom, fonction, photo FROM users WHERE role != 'admin' AND id != ? ORDER BY nom, post_nom");
+$stmt->execute([$user_id]);
 $superviseurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Traitement du formulaire
@@ -51,6 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <style>
+  /* Cards superviseur sélection */
+  .user-card.selected {
+    border: 2px solid #3D74B9 !important;
+    box-shadow: 0 0 0 2px #3D74B933 !important;
+  }
+  .user-avatar { width: 56px; height: 56px; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
   .fosip-label { font-weight: 600; color: #3D74B9; }
   .btn-fosip {
     background-color: #3D74B9;
@@ -111,7 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <small class="text-muted">Fonction que vous occupez dans le cadre de ce projet.</small>
     </div>
     <div class="col-12 text-end mt-3">
-      <button type="button" class="btn btn-fosip" onclick="nextStep(2)">Suivant</button>
+      <div class="d-flex justify-content-end gap-2">
+        <!-- Pas de bouton retour sur la première étape -->
+        <button type="button" class="btn btn-fosip" onclick="nextStep(2)">Suivant</button>
+      </div>
     </div>
   </div>
 
@@ -128,25 +139,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <small class="text-muted">Choisissez le mois concerné par cette fiche d’objectifs.</small>
     </div>
     <div class="col-12 text-end mt-3">
-      <button type="button" class="btn btn-fosip" onclick="nextStep(3)">Suivant</button>
+      <div class="d-flex justify-content-between gap-2">
+        <button type="button" class="btn btn-outline-secondary" onclick="prevStep(1)"><i class="bi bi-arrow-left"></i> Retour</button>
+        <button type="button" class="btn btn-fosip" onclick="nextStep(3)">Suivant</button>
+      </div>
     </div>
   </div>
 
   <!-- Étape 3 : Superviseur -->
   <div class="step-section" id="step3">
-    <div class="col-12">
+    <div class="col-12 mb-3">
       <label class="form-label fosip-label">Sélectionnez votre superviseur</label>
-      <select name="superviseur_id" class="form-select" required>
-        <option value="">-- Choisissez --</option>
-        <?php foreach ($superviseurs as $s): ?>
-          <option value="<?= $s['id'] ?>">
-            <?= htmlspecialchars($s['nom'].' '.$s['post_nom'].' — '.$s['fonction']) ?>
-          </option>
+      <input type="text" id="search-superviseur" class="form-control mb-3" placeholder="Rechercher par nom, fonction...">
+      <div id="superviseur-list" class="row g-3">
+        <?php foreach ($superviseurs as $s):
+          $hasPhoto = !empty($s['photo']);
+          $photo = $hasPhoto ? "../assets/img/profiles/{$s['photo']}" : null;
+          $nomComplet = trim(($s['nom'] ?? '').' '.($s['post_nom'] ?? ''));
+        ?>
+        <div class="col-md-6 col-lg-4 superviseur-card-item">
+          <label class="card user-card h-100 shadow-sm p-3 mb-0 w-100" style="cursor:pointer;">
+            <input type="radio" name="superviseur_id" value="<?= $s['id'] ?>" class="d-none">
+            <div class="d-flex align-items-center mb-2">
+              <?php if ($hasPhoto): ?>
+                <img src="<?= htmlspecialchars($photo) ?>" class="user-avatar rounded-circle me-3" style="width:56px;height:56px;object-fit:cover;">
+              <?php else: ?>
+                <span class="user-avatar rounded-circle me-3 d-flex align-items-center justify-content-center bg-light border" style="width:56px;height:56px;font-size:2rem;color:#b0b0b0;">
+                  <i class="bi bi-person-circle"></i>
+                </span>
+              <?php endif; ?>
+              <div>
+                <div class="fw-bold" style="font-size:1.1rem; color:#212529;">
+                  <?= htmlspecialchars($nomComplet) ?>
+                </div>
+                <div class="text-muted" style="font-size:0.95rem;">
+                  <?= htmlspecialchars($s['fonction'] ?? '') ?>
+                </div>
+              </div>
+            </div>
+          </label>
+        </div>
         <?php endforeach; ?>
-      </select>
+      </div>
       <small class="text-muted">Votre superviseur direct pour cette période d’évaluation.</small>
     </div>
-    <div class="col-12 text-end mt-3">
+    <div class="col-12 d-flex justify-content-between gap-2 mt-3">
+      <button type="button" class="btn btn-outline-secondary" onclick="prevStep(2)"><i class="bi bi-arrow-left"></i> Retour</button>
       <button type="button" class="btn btn-fosip" onclick="nextStep(4)">Suivant</button>
     </div>
   </div>
@@ -167,8 +205,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <i class="bi bi-plus-circle me-1"></i> Ajouter un objectif
       </button>
     </div>
-    <div class="col-12 text-end mt-4">
-            <button type="submit" class="btn btn-fosip px-4">
+    <div class="col-12 d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" onclick="prevStep(3)"><i class="bi bi-arrow-left"></i> Retour</button>
+      <button type="submit" class="btn btn-fosip px-4">
         <i class="bi bi-save me-1"></i> Enregistrer
       </button>
     </div>
@@ -182,6 +221,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div> <!-- fin row -->
 
 <script>
+// Fonction pour revenir à l'étape précédente
+function prevStep(step) {
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + step).classList.add('active');
+}
+// Sélection visuelle de la card superviseur et recherche dynamique
+document.addEventListener('DOMContentLoaded', function () {
+  const cards = document.querySelectorAll('.superviseur-card-item label');
+  cards.forEach(card => {
+    card.addEventListener('click', function () {
+      cards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+  });
+  // Recherche dynamique
+  const searchInput = document.getElementById('search-superviseur');
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      const val = searchInput.value.toLowerCase();
+      document.querySelectorAll('.superviseur-card-item').forEach(item => {
+        const txt = item.textContent.toLowerCase();
+        item.style.display = txt.includes(val) ? '' : 'none';
+      });
+    });
+  }
+  // Empêcher le passage à l'étape suivante sans superviseur sélectionné
+  const btnSuivant = document.querySelector('#step3 .btn-fosip');
+  if (btnSuivant) {
+    btnSuivant.addEventListener('click', function (e) {
+      const checked = document.querySelector('input[name="superviseur_id"]:checked');
+      if (!checked) {
+        e.preventDefault();
+        if (window.globalShowToast) {
+          globalShowToast('danger', 'Veuillez sélectionner votre superviseur avant de continuer.');
+        } else {
+          alert('Veuillez sélectionner votre superviseur avant de continuer.');
+        }
+        return false;
+      }
+      nextStep(4);
+    });
+  }
+});
+// Vérification superviseur obligatoire avant soumission (toast Bootstrap)
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('objectifForm');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      const superviseur = form.querySelector('select[name="superviseur_id"]');
+      if (superviseur && !superviseur.value) {
+        e.preventDefault();
+        if (window.globalShowToast) {
+          globalShowToast('danger', 'Veuillez sélectionner un superviseur avant de valider.');
+        } else {
+          alert('Veuillez sélectionner un superviseur avant de valider.');
+        }
+      }
+    });
+  }
+});
 function nextStep(step) {
   document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
   document.getElementById('step' + step).classList.add('active');
