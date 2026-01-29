@@ -1,4 +1,5 @@
 <?php
+
 /**
  * pages/supervision-evaluer.php
  * =====================================================================
@@ -117,11 +118,25 @@ try {
 } catch(Throwable $e) {}
 
 // Objectifs items
+
+// Charger objectifs + auto-évaluation agent (note/commentaire)
 $items = [];
 try {
-  $stI = $pdo->prepare('SELECT id, contenu, ordre FROM objectifs_items WHERE fiche_id = :fid ORDER BY ordre ASC');
-  $stI->execute([':fid'=>$fiche_id]);
-  $items = $stI->fetchAll(PDO::FETCH_ASSOC);
+  $stI = $pdo->prepare('SELECT oi.id, oi.contenu, oi.ordre, ae.note AS auto_note, ae.commentaire AS auto_commentaire
+    FROM objectifs_items oi
+    LEFT JOIN auto_evaluation ae ON ae.item_id = oi.id AND ae.user_id = :agent_id AND ae.fiche_id = oi.fiche_id
+    WHERE oi.fiche_id = :fid
+    ORDER BY oi.ordre ASC');
+  $stI->execute([':fid'=>$fiche_id, ':agent_id'=>$agent_id]);
+  $items = [];
+  while ($row = $stI->fetch(PDO::FETCH_ASSOC)) {
+    // Normalisation des clés pour éviter les soucis de casse ou d'accès
+    $row_norm = [];
+    foreach ($row as $k => $v) {
+      $row_norm[strtolower($k)] = $v;
+    }
+    $items[] = $row_norm;
+  }
 } catch(Throwable $e) {}
 
 // Cotations existantes cote_des_objectifs
@@ -398,6 +413,9 @@ function renderRadioOptions($namePrefix, $existing){
             <small>Notez chaque objectif de la fiche sur une échelle de 1 à 20</small>
           </div>
           <div class="card-body">
+            <?php
+            // (DEBUG supprimé)
+            ?>
             <?php if (empty($items)): ?>
               <div class="alert alert-warning">Aucun objectif item dans cette fiche.</div>
             <?php else: foreach ($items as $i => $it):
@@ -407,6 +425,56 @@ function renderRadioOptions($namePrefix, $existing){
             ?>
             <div class="mb-3 p-3 rounded border objectif-row">
               <div class="fw-semibold mb-2">#<?= $i+1 ?> — <?= htmlspecialchars($it['contenu']) ?></div>
+              <!-- Affichage auto-évaluation agent -->
+              <?php
+                $auto_note = $it['auto_note'];
+                $auto_commentaire = $it['auto_commentaire'];
+                // Détermination du statut d'atteinte
+                $icon = '';
+                $label = '';
+                $color = '';
+                if ($auto_note !== null && $auto_note !== '') {
+                  // Affichage direct de la valeur enum
+                  switch (strtolower(trim($auto_note))) {
+                    case 'atteint':
+                      $icon = 'bi-emoji-smile';
+                      $label = 'Atteint';
+                      $color = 'primary';
+                      break;
+                    case 'non_atteint':
+                      $icon = 'bi-emoji-frown';
+                      $label = 'Non atteint';
+                      $color = 'danger';
+                      break;
+                    case 'depasse':
+                      $icon = 'bi-emoji-laughing';
+                      $label = 'Dépassé';
+                      $color = 'success';
+                      break;
+                    default:
+                      $icon = 'bi-question-circle';
+                      $label = htmlspecialchars($auto_note);
+                      $color = 'secondary';
+                  }
+                }
+              ?>
+              <div class="bg-light border rounded py-2 px-3 mb-2 d-flex align-items-center gap-2" style="font-size:0.95em;">
+                <i class="bi bi-person-badge me-1"></i>
+                <strong>Auto-évaluation de l'agent :</strong>
+                <?php if ($auto_note !== null && $auto_note !== ''): ?>
+                  <span class="ms-2">
+                    <span class="badge bg-<?= $color ?>"><i class="bi <?= $icon ?> me-1"></i><?= htmlspecialchars($label) ?></span>
+                  </span>
+                  <span class="ms-3">
+                    <span class="fw-semibold">Commentaire : </span>
+                    <span style="color:#0d6efd;">
+                      <?= ($auto_commentaire !== null && $auto_commentaire !== '') ? htmlspecialchars($auto_commentaire) : '<span class="text-muted">Non renseigné</span>' ?>
+                    </span>
+                  </span>
+                <?php else: ?>
+                  <span class="badge bg-secondary ms-2"><i class="bi bi-dash-circle me-1"></i>Non complété</span>
+                <?php endif; ?>
+              </div>
               <div class="row g-2 align-items-center">
                 <div class="col-md-3">
                   <label class="form-label small">Note (1-20)</label>
@@ -423,8 +491,20 @@ function renderRadioOptions($namePrefix, $existing){
                 </div>
               </div>
               <input type="hidden" name="<?= $prefix ?>[item_id]" value="<?= $item_id ?>" />
-              <?php if ($cote && $cote['note'] !== null): $pct = round(((int)$cote['note']) * 5); ?>
-                <div class="small text-muted mt-1">Moyenne item: <strong><?= (int)$cote['note'] ?>/20</strong> (<?= $pct ?>%)</div>
+              <?php if ($cote && $cote['note'] !== null): 
+                $note = (int)$cote['note'];
+                $pct = $note * 5;
+                $noteClass = $pct >= 80 ? 'success' : ($pct >= 50 ? 'primary' : 'danger');
+              ?>
+                <div class="d-flex align-items-center mt-2">
+                  <span class="badge bg-<?= $noteClass ?> me-2">Note superviseur : <?= $note ?>/20</span>
+                  <small class="text-muted">(<?= $pct ?>%)</small>
+                </div>
+                <?php if (!empty($cote['commentaire'])): ?>
+                  <small class="text-muted d-block mt-1"><em><?= htmlspecialchars($cote['commentaire']) ?></em></small>
+                <?php endif; ?>
+              <?php else: ?>
+                <span class="text-muted">Non noté</span>
               <?php endif; ?>
             </div>
             <?php endforeach; endif; ?>
@@ -661,7 +741,7 @@ document.getElementById('btnSaveAll')?.addEventListener('click', function() {
         if(data.ok){
           formModified = false; // Réinitialiser le flag
           showToast('success', 'Évaluation enregistrée avec succès', 'bi-check-circle-fill');
-          setTimeout(() => { window.location.reload(); }, 1500);
+          // Suppression du reload automatique pour laisser l'affichage visible
         } else {
           showToast('danger', 'Erreur : '+ (data.error || 'Enregistrement échoué'), 'bi-exclamation-triangle-fill');
         }

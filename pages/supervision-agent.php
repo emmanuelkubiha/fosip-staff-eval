@@ -79,11 +79,24 @@ if (!empty($ficheIds)) {
   } catch (Throwable $e) {}
   if (tableExists($pdo,'auto_evaluation')) {
     try {
-      $q2 = $pdo->query("SELECT fiche_id, note, COUNT(*) cnt FROM auto_evaluation WHERE fiche_id IN ($in) GROUP BY fiche_id, note");
+      // On récupère pour chaque fiche les user_id agents associés
+      $ficheAgentMap = [];
+      foreach ($rows as $r) {
+        $ficheAgentMap[(int)$r['fiche_id']] = (int)$r['agent_id'];
+      }
+      $q2 = $pdo->query("SELECT fiche_id, user_id, note, COUNT(*) cnt FROM auto_evaluation WHERE fiche_id IN ($in) GROUP BY fiche_id, user_id, note");
       foreach ($q2->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $fid=(int)$r['fiche_id']; $note=$r['note']; $cnt=(int)$r['cnt'];
-        if (!isset($autoDist[$fid])) $autoDist[$fid]=['depasse'=>0,'atteint'=>0,'non_atteint'=>0];
-        if (isset($autoDist[$fid][$note])) $autoDist[$fid][$note] = $cnt;
+        $fid = (int)$r['fiche_id'];
+        $uid = (int)$r['user_id'];
+        $note = strtolower(trim($r['note']));
+        $cnt = (int)$r['cnt'];
+        // On ne compte que les auto-évaluations de l'agent de la fiche
+        if (isset($ficheAgentMap[$fid]) && $ficheAgentMap[$fid] === $uid) {
+          if (!isset($autoDist[$fid])) $autoDist[$fid] = ['depasse'=>0,'atteint'=>0,'non_atteint'=>0];
+          if (in_array($note, ['depasse','atteint','non_atteint'])) {
+            $autoDist[$fid][$note] = $cnt;
+          }
+        }
       }
     } catch (Throwable $e) {}
   }
@@ -229,7 +242,7 @@ if (!empty($ficheIds)) {
             <?php
               $fid = (int)$r['fiche_id'];
               $itCnt = $itemCount[$fid] ?? 0;
-              $ad = $autoDist[$fid] ?? ['depasse'=>0,'atteint'=>0,'non_atteint'=>0];
+              $ad = $autoDist[$fid] ?? null;
               $ficheStatut = $r['fiche_statut'] ?? '';
               $supStatut = $r['sup_statut'] ?? null;
               
@@ -313,15 +326,21 @@ if (!empty($ficheIds)) {
                         <span class="fw-semibold small">Auto-évaluation:</span>
                       </div>
                       <div class="d-flex gap-2 flex-wrap ms-4">
-                        <span class="badge bg-success bg-opacity-10 text-success" style="border: 1px solid rgba(25, 135, 84, 0.3);">
-                          <i class="bi bi-arrow-up-circle-fill me-1"></i><?= (int)$ad['depasse'] ?>
-                        </span>
-                        <span class="badge bg-warning bg-opacity-10 text-warning" style="border: 1px solid rgba(255, 193, 7, 0.3);">
-                          <i class="bi bi-dash-circle-fill me-1"></i><?= (int)$ad['atteint'] ?>
-                        </span>
-                        <span class="badge bg-danger bg-opacity-10 text-danger" style="border: 1px solid rgba(220, 53, 69, 0.3);">
-                          <i class="bi bi-arrow-down-circle-fill me-1"></i><?= (int)$ad['non_atteint'] ?>
-                        </span>
+                        <?php if ($ad === null): ?>
+                          <span class="badge bg-secondary bg-opacity-10 text-secondary" style="border: 1px solid rgba(108, 117, 125, 0.3);">
+                            <i class="bi bi-slash-circle me-1"></i>Non complété
+                          </span>
+                        <?php else: ?>
+                          <span class="badge bg-success bg-opacity-10 text-success" style="border: 1px solid rgba(25, 135, 84, 0.3);">
+                            <i class="bi bi-arrow-up-circle-fill me-1"></i><?= (int)($ad['depasse'] ?? 0) ?>
+                          </span>
+                          <span class="badge bg-primary bg-opacity-10 text-primary" style="border: 1px solid rgba(13, 110, 253, 0.3);">
+                            <i class="bi bi-dash-circle-fill me-1"></i><?= (int)($ad['atteint'] ?? 0) ?>
+                          </span>
+                          <span class="badge bg-danger bg-opacity-10 text-danger" style="border: 1px solid rgba(220, 53, 69, 0.3);">
+                            <i class="bi bi-arrow-down-circle-fill me-1"></i><?= (int)($ad['non_atteint'] ?? 0) ?>
+                          </span>
+                        <?php endif; ?>
                       </div>
                     </div>
                   </div>
