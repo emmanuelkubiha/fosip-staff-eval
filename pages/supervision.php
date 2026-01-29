@@ -29,6 +29,7 @@ require_once('../includes/db.php');
 $current_page = 'supervision.php';
 include('../includes/header.php');
 
+
 // Auth
 // Vérification stricte du rôle : superviseur ou coordination peuvent accéder
 if (!isset($_SESSION['user_id']) || !in_array(($_SESSION['role'] ?? ''), ['superviseur', 'coordination'])) {
@@ -41,11 +42,6 @@ $superviseur_id = (int)$_SESSION['user_id'];
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
 $csrf = $_SESSION['csrf_token'];
 
-// Helper générique : teste l'existence d'une table (utile si le schéma évolue)
-function tableExists(PDO $pdo, string $table): bool {
-  try { $st=$pdo->prepare('SHOW TABLES LIKE ?'); $st->execute([$table]); return (bool)$st->fetchColumn(); }
-  catch(Throwable $e){ return false; }
-}
 
 $search = trim((string)($_GET['q'] ?? ''));
 $periode = trim((string)($_GET['periode'] ?? ''));
@@ -55,13 +51,13 @@ $filter = $_GET['statut'] ?? 'encours'; // Nouveau jeu de filtres: a-evaluer | e
 $sql = "SELECT 
           o.id AS fiche_id, o.periode, o.nom_projet, o.poste, o.statut AS fiche_statut, o.created_at AS fiche_created_at, o.updated_at AS fiche_updated_at,
           a.id AS agent_id, a.nom AS agent_nom, a.post_nom AS agent_post_nom, a.photo AS agent_photo,
-          s.id AS supervision_id, s.statut AS sup_statut, s.note AS sup_note, s.commentaire AS sup_commentaire, s.date_validation
+          (
+            SELECT ROUND(AVG(note),2) FROM cote_des_objectifs cdo WHERE cdo.fiche_id = o.id
+          ) AS sup_note
         FROM objectifs o
         JOIN users a ON a.id = o.user_id AND a.superviseur_id = :sid1
-        LEFT JOIN supervisions s 
-          ON s.agent_id = o.user_id AND s.superviseur_id = :sid2 AND s.periode = o.periode
         WHERE 1 = 1";
-$params = [':sid1'=>$superviseur_id, ':sid2'=>$superviseur_id];
+$params = [':sid1'=>$superviseur_id];
 
 // Recherche multi-champs (projet, poste, nom agent, période)
 if ($search !== '') {
@@ -95,14 +91,18 @@ $rows = $st->fetchAll(PDO::FETCH_ASSOC);
 // Préparer indicateurs: nombre d'objectifs et avancement auto‑évaluation par fiche
 $itemCount = [];
 $autoCount = [];
+$tableAutoEvalExists = tableExists($pdo,'auto_evaluation');
+$tableObjectifsItemsExists = tableExists($pdo,'objectifs_items');
 $ficheIds = array_map(fn($r)=> (int)$r['fiche_id'], $rows);
 if (!empty($ficheIds)) {
   $in = implode(',', array_map('intval', $ficheIds));
   try {
     $q1 = $pdo->query("SELECT fiche_id, COUNT(*) cnt FROM objectifs_items WHERE fiche_id IN ($in) GROUP BY fiche_id");
     foreach ($q1->fetchAll(PDO::FETCH_ASSOC) as $r) $itemCount[(int)$r['fiche_id']] = (int)$r['cnt'];
+    // Correction : forcer typage int sur toutes les clés (sécurité mapping)
+    $itemCount = array_combine(array_map('intval', array_keys($itemCount)), array_values($itemCount));
   } catch (Throwable $e) { /* ignore */ }
-  if (tableExists($pdo,'auto_evaluation')) {
+  if ($tableAutoEvalExists) {
     try {
       // On récupère pour chaque fiche l'agent associé
       $ficheAgentMap = [];
@@ -113,8 +113,15 @@ if (!empty($ficheIds)) {
       foreach ($ficheAgentMap as $ficheId => $agentId) {
         $q2 = $pdo->prepare("SELECT COUNT(*) FROM auto_evaluation WHERE fiche_id = ? AND user_id = ?");
         $q2->execute([$ficheId, $agentId]);
-        $autoCount[$ficheId] = (int)$q2->fetchColumn();
+        $count = $q2->fetchColumn();
+        $autoCount[(int)$ficheId] = $count !== false ? (int)$count : 0;
       }
+      // S'assurer que chaque fiche a une entrée, même si aucune auto-évaluation
+      foreach ($ficheIds as $fid) {
+        if (!isset($autoCount[(int)$fid])) $autoCount[(int)$fid] = 0;
+      }
+      // Correction : forcer typage int sur toutes les clés (sécurité mapping)
+      $autoCount = array_combine(array_map('intval', array_keys($autoCount)), array_values($autoCount));
     } catch (Throwable $e) { /* ignore */ }
   }
 }
@@ -195,35 +202,36 @@ if (!empty($ficheIds)) {
             $photoPath = '../assets/img/profiles/' . htmlspecialchars($agentPhoto);
             $ficheStatut = $r['fiche_statut'] ?? '';
             $supStatut = $r['sup_statut'] ?? null;
-            
             // Système de badges basé sur le statut de la fiche dans objectifs.statut
             $badge = 'secondary'; $label = 'Pas encore évalué';
-            
             // Priorité au statut de la fiche objectif
             if ($ficheStatut === 'termine') {
-              // Fiche commentée par la coordination
-              $badge = 'success'; 
-              $label = 'Terminé';
+              $badge = 'success'; $label = 'Terminé';
             } elseif ($ficheStatut === 'evalue') {
-              // Fiche évaluée par le superviseur, en attente coordination
-              $badge = 'info'; 
-              $label = 'Évalué';
+              $badge = 'info'; $label = 'Évalué';
             } elseif ($ficheStatut === 'encours' || $ficheStatut === 'attente') {
-              // Fiche en cours d'évaluation par l'agent ou en attente d'évaluation superviseur
               if ($supStatut === 'encours') {
-                $badge = 'warning'; 
-                $label = 'En cours d\'évaluation';
+                $badge = 'warning'; $label = 'En cours d\'évaluation';
               } else {
-                $badge = 'secondary'; 
-                $label = 'Non évalué';
+                $badge = 'secondary'; $label = 'Non évalué';
               }
             }
-            
-            $noteDisplay = is_null($r['sup_note']) ? '—' : (int)$r['sup_note'];
             $fid = (int)$r['fiche_id'];
-            $itCnt = $itemCount[$fid] ?? 0; $aeCnt = $autoCount[$fid] ?? 0;
-            $percent = $itCnt > 0 ? round($aeCnt*100/$itCnt) : 0;
-            $pClass = $percent < 34 ? 'bg-danger' : ($percent < 67 ? 'bg-warning' : 'bg-success');
+            $aeCnt = $autoCount[$fid] ?? 0;
+            $itCnt = $itemCount[$fid] ?? 0;
+            // ...existing code...
+            // Affichage de la note du superviseur basée sur la moyenne des notes de cote_des_objectifs
+            if (!is_null($r['sup_note'])) {
+              $note = round((float)$r['sup_note'], 2);
+              $noteDisplay = $note . '/20';
+              $percent = max(0, min(100, round($note * 5)));
+              $pClass = $percent < 34 ? 'bg-danger' : ($percent < 67 ? 'bg-warning' : 'bg-success');
+            } else {
+              $noteDisplay = 'Non évalué';
+              $percent = 0;
+              $pClass = 'bg-secondary';
+            }
+            // ...existing code...
           ?>
           <div class="card border-0 h-100" style="border-radius:16px;overflow:hidden;box-shadow: 0 2px 8px rgba(0,0,0,0.08);transition: all 0.3s ease;">
             <div class="card-body d-flex flex-column p-3">
@@ -325,22 +333,25 @@ if (!empty($ficheIds)) {
 
               <!-- Statistiques -->
               <div class="mb-3 p-2" style="background:#f0f7ff;border-radius:10px;border:1px solid #d6e9ff;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <span class="small text-muted"><i class="bi bi-star me-1" style="color:#3D74B9;"></i>Note</span>
-                  <span class="fw-bold" style="color:#3D74B9;font-size:1.1rem;"><?= $noteDisplay ?></span>
-                </div>
+                <!-- Note du superviseur uniquement, sans doublon -->
                 <div class="mb-2">
                   <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="small text-muted"><i class="bi bi-speedometer2 me-1" style="color:#3D74B9;"></i>Auto-évaluation</span>
-                    <span class="small fw-semibold"><?= $aeCnt ?>/<?= $itCnt ?> objectifs</span>
+                    <span class="small text-muted"><i class="bi bi-speedometer2 me-1" style="color:#3D74B9;"></i>Note du superviseur</span>
+                    <span class="small fw-semibold"><?= $noteDisplay ?></span>
                   </div>
                   <div class="progress" style="height:6px;border-radius:10px;background:#e2e8f0;">
                     <div class="progress-bar <?= $pClass ?>" role="progressbar" 
                          style="width:<?= $percent ?>%;border-radius:10px;"
                          aria-valuenow="<?= $percent ?>" aria-valuemin="0" aria-valuemax="100"></div>
                   </div>
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <span class="small text-muted"><i class="bi bi-list-check me-1" style="color:#3D74B9;"></i>Objectifs auto-évalués</span>
+                    <span class="small fw-semibold"><?= $aeCnt ?>/<?= $itCnt ?></span>
+                  </div>
                   <div class="text-center mt-1">
-                    <span class="small fw-semibold" style="color:<?= $percent<34?'#dc3545':($percent<67?'#ffc107':'#28a745') ?>;"><?= $percent ?>%</span>
+                    <span class="small fw-semibold" style="color:<?= $percent<34?'#dc3545':($percent<67?'#ffc107':'#28a745') ?>;">
+                      <?= $percent ?>%
+                    </span>
                   </div>
                 </div>
               </div>

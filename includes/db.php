@@ -1,4 +1,16 @@
 <?php
+// Fonction utilitaire : teste l'existence d'une table (insensible à la casse)
+function tableExists(PDO $pdo, string $table): bool {
+    try {
+        $st = $pdo->prepare('SHOW TABLES');
+        $st->execute();
+        $tables = $st->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($tables as $t) {
+            if (strcasecmp($t, $table) === 0) return true;
+        }
+        return false;
+    } catch(Throwable $e){ return false; }
+}
 /**
  * Connexion à la base de données
  * Utilise includes/config.php pour les identifiants (non versionné)

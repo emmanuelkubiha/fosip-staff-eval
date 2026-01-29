@@ -27,10 +27,7 @@ if (!isset($_SESSION['user_id']) || !in_array(($_SESSION['role'] ?? ''), ['super
 $superviseur_id = (int)$_SESSION['user_id'];
 
 // Helper: tester l'existence d'une table
-function tableExists(PDO $pdo, string $table): bool {
-  try{ $st=$pdo->prepare('SHOW TABLES LIKE ?'); $st->execute([$table]); return (bool)$st->fetchColumn(); }
-  catch(Throwable $e){ return false; }
-}
+// La fonction tableExists() est maintenant uniquement définie dans includes/db.php
 
 $search = trim((string)($_GET['q'] ?? ''));
 $periode = trim((string)($_GET['periode'] ?? ''));
