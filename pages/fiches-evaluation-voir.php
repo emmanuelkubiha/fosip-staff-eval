@@ -11,10 +11,7 @@ $current_page = 'fiche-evaluation-voir.php';
 include('../includes/header.php');
 
 /* ---------- Helpers ---------- */
-function tableExists(PDO $pdo, string $table): bool {
-  try { $st = $pdo->prepare("SHOW TABLES LIKE ?"); $st->execute([$table]); return (bool)$st->fetchColumn(); }
-  catch (Throwable $e) { error_log('tableExists error: '.$e->getMessage()); return false; }
-}
+// ...existing code...
 function ensure_csrf(): string {
   if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
   return $_SESSION['csrf_token'];
