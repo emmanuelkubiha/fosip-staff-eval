@@ -104,8 +104,17 @@ if (!empty($ficheIds)) {
   } catch (Throwable $e) { /* ignore */ }
   if (tableExists($pdo,'auto_evaluation')) {
     try {
-      $q2 = $pdo->query("SELECT fiche_id, COUNT(*) cnt FROM auto_evaluation WHERE fiche_id IN ($in) GROUP BY fiche_id");
-      foreach ($q2->fetchAll(PDO::FETCH_ASSOC) as $r) $autoCount[(int)$r['fiche_id']] = (int)$r['cnt'];
+      // On récupère pour chaque fiche l'agent associé
+      $ficheAgentMap = [];
+      foreach ($rows as $row) {
+        $ficheAgentMap[(int)$row['fiche_id']] = (int)$row['agent_id'];
+      }
+      // Pour chaque fiche, compter les auto-évaluations de l'agent de la fiche
+      foreach ($ficheAgentMap as $ficheId => $agentId) {
+        $q2 = $pdo->prepare("SELECT COUNT(*) FROM auto_evaluation WHERE fiche_id = ? AND user_id = ?");
+        $q2->execute([$ficheId, $agentId]);
+        $autoCount[$ficheId] = (int)$q2->fetchColumn();
+      }
     } catch (Throwable $e) { /* ignore */ }
   }
 }

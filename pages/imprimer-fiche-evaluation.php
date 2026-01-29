@@ -136,27 +136,39 @@ foreach ($items as $it) {
   else $counts['non_atteint']++;
 }
 
-$score_total = $counts['depasse'] * 2 + $counts['atteint'] * 1;
-$score_max = $total_items * 2;
-$fiche_performance = $score_max > 0 ? round(($score_total / $score_max) * 100) : 0;
 
-$supervise_eval = 0; $coord_comments = 0;
+// Calculer la cote du superviseur (moyenne des notes/20)
+$fiche_cote = null;
+$fiche_cote_pct = null;
 try {
-  $stS = $pdo->prepare("SELECT id, statut FROM supervisions WHERE agent_id = ? AND periode = ?");
-  $stS->execute([ $agent_id, $fiche['periode'] ]);
-  $supRows = $stS->fetchAll(PDO::FETCH_ASSOC);
-  foreach ($supRows as $sr) {
-    if (!in_array($sr['statut'], ['en attente','attente'])) $supervise_eval++;
-    // coordination_commentaires lié à cette supervision ?
-    try {
-      $stC = $pdo->prepare("SELECT COUNT(*) FROM coordination_commentaires WHERE fiche_id = ?");
-      $stC->execute([ $sr['id'] ]);
-      if ((int)$stC->fetchColumn() > 0) $coord_comments++;
-    } catch (Throwable $e2) { /* table coordination_commentaires peut ne pas exister */ }
+  $stAvg = $pdo->prepare('SELECT AVG(note) FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sid');
+  $stAvg->execute([':fid'=>(int)$fiche_id, ':sid'=>$superviseur_id]);
+  $avg20 = (float)$stAvg->fetchColumn();
+  if ($avg20 > 0) {
+    $fiche_cote = number_format($avg20,1);
+    $fiche_cote_pct = round($avg20 * 5); // /20 vers %
   }
+} catch (Throwable $e) {}
+
+
+// Correction : vérifier s'il existe au moins une note du superviseur pour cette fiche
+$supervise_eval = 0;
+$coord_comments = 0;
+try {
+  $stS = $pdo->prepare("SELECT COUNT(*) FROM cote_des_objectifs WHERE fiche_id = ? AND superviseur_id = ? AND note IS NOT NULL");
+  $stS->execute([$fiche_id, $superviseur_id]);
+  if ((int)$stS->fetchColumn() > 0) {
+    $supervise_eval = 1;
+  }
+  // coordination_commentaires lié à la fiche ?
+  try {
+    $stC = $pdo->prepare("SELECT COUNT(*) FROM coordination_commentaires WHERE fiche_id = ?");
+    $stC->execute([ $fiche_id ]);
+    if ((int)$stC->fetchColumn() > 0) $coord_comments = 1;
+  } catch (Throwable $e2) { /* table coordination_commentaires peut ne pas exister */ }
 } catch (Throwable $e) {
-  // tables manquantes ou erreur -> laisser les compteurs à 0
-  $supervise_eval = 0; $coord_comments = 0;
+  $supervise_eval = 0;
+  $coord_comments = 0;
 }
 
 // Ensure resume fields exist (avoid undefined variable / null in foreach)
@@ -347,8 +359,12 @@ header('X-Content-Type-Options: nosniff');
         </div>
       </div>
       <div>
-        <div class="small-muted">Performance fiche</div>
-        <div style="font-size:1.15rem;font-weight:700;color:var(--fosip)"><?= $fiche_performance ?>%</div>
+        <div class="small-muted">Cote du superviseur</div>
+        <?php if ($fiche_cote !== null): ?>
+          <div style="font-size:1.15rem;font-weight:700;color:var(--fosip)"><?= $fiche_cote ?>/20 <span class="text-muted">(<?= $fiche_cote_pct ?>%)</span></div>
+        <?php else: ?>
+          <div style="font-size:1.15rem;font-weight:700;color:var(--fosip)"><span class="text-muted">Non évalué</span></div>
+        <?php endif; ?>
       </div>
       <div class="mt-2 small-muted">Superviseur évalué : <?= $supervise_eval ? 'Oui' : 'Non' ?> — Commentaires coordination : <?= $coord_comments ? 'Oui' : 'Non' ?></div>
     </div>
@@ -369,6 +385,17 @@ header('X-Content-Type-Options: nosniff');
           </tr>
         </thead>
         <tbody>
+          <?php
+          // Charger les commentaires de cote_des_objectifs pour chaque objectif (clé item_id)
+          $supervision_comments = [];
+          try {
+            $stCoteCom = $pdo->prepare('SELECT item_id, commentaire FROM cote_des_objectifs WHERE fiche_id = ? AND superviseur_id = ?');
+            $stCoteCom->execute([$fiche_id, $superviseur_id]);
+            foreach ($stCoteCom->fetchAll(PDO::FETCH_ASSOC) as $row) {
+              if (!empty($row['commentaire'])) $supervision_comments[(int)$row['item_id']] = $row['commentaire'];
+            }
+          } catch (Throwable $e) {}
+          ?>
           <?php foreach ($items as $i => $it):
             $itemId = (int)$it['id'];
             $ae = $auto_map_by_item[$itemId] ?? null;
@@ -376,12 +403,16 @@ header('X-Content-Type-Options: nosniff');
             $comm = $ae['commentaire'] ?? '';
             $note_label = $note === 'depasse' ? 'Dépasse' : ($note === 'atteint' ? 'Atteint' : ($note === 'non_atteint' ? 'Non atteint' : '—'));
             $note_class = $note === 'depasse' ? 'depasse' : ($note === 'atteint' ? 'atteint' : ($note === 'non_atteint' ? 'non_atteint' : ''));
+            $justif = $supervision_comments[$itemId] ?? '';
           ?>
           <tr>
             <td class="small-muted"><?= $i+1 ?></td>
             <td>
-              <div style="font-weight:600;"><?= nl2br(htmlspecialchars($it['contenu'])) ?></div>
+              <div style="font-weight:600;\"><?= nl2br(htmlspecialchars($it['contenu'])) ?></div>
               <?php if (!empty($it['resume'])): ?><div class="small-muted mt-2"><?= nl2br(htmlspecialchars($it['resume'])) ?></div><?php endif; ?>
+              <?php if ($justif): ?>
+                <div class="mt-2 p-2 bg-light border rounded small"><strong>Commentaire du superviseur :</strong><br><?= nl2br(htmlspecialchars($justif)) ?></div>
+              <?php endif; ?>
             </td>
             <td>
               <div><span class="note-badge <?= $note_class ?>"><?= $note_label ?></span></div>

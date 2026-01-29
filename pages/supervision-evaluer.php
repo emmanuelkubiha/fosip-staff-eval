@@ -569,8 +569,23 @@ function renderRadioOptions($namePrefix, $existing){
                   <i class="bi bi-calendar-event me-2 text-danger"></i>4. Échéancier
                   <small class="text-muted">(Date cible)</small>
                 </label>
-                <input type="text" name="actions[quand_atteindre]" class="form-control" placeholder="Ex: Décembre 2025" value="<?= htmlspecialchars($actionsReco['quand_atteindre'] ?? '') ?>">
-                <small class="form-text text-muted">Date ou période visée</small>
+                <?php
+                  // Préparer la valeur pour le champ month (format YYYY-MM)
+                  $quand_val = $actionsReco['quand_atteindre'] ?? '';
+                  $quand_month = '';
+                  if (preg_match('/^(\d{4})-(\d{2})$/', $quand_val)) {
+                    $quand_month = $quand_val;
+                  } elseif (preg_match('/^(\w+)\s+(\d{4})$/u', $quand_val, $m)) {
+                    // Ex: Décembre 2025 → 2025-12
+                    $mois_fr = ['janvier'=>1,'février'=>2,'mars'=>3,'avril'=>4,'mai'=>5,'juin'=>6,'juillet'=>7,'août'=>8,'septembre'=>9,'octobre'=>10,'novembre'=>11,'décembre'=>12];
+                    $mois = mb_strtolower($m[1]);
+                    $annee = $m[2];
+                    $num = $mois_fr[$mois] ?? 0;
+                    if ($num) $quand_month = $annee.'-'.str_pad($num,2,'0',STR_PAD_LEFT);
+                  }
+                ?>
+                <input type="month" name="actions[quand_atteindre]" class="form-control" value="<?= htmlspecialchars($quand_month) ?>">
+                <small class="form-text text-muted">Sélectionnez le mois et l'année</small>
               </div>
             </div>
             
@@ -655,19 +670,55 @@ document.getElementById('btnSaveAll')?.addEventListener('click', function() {
   
   // Compter les compétences évaluées
   let nbCompetencesIndiv = 0, nbCompetencesGestion = 0, nbCompetencesLeader = 0, nbCompetencesProfil = 0;
+
+  // Nouvelle logique : compter une compétence si radio OU commentaire rempli
+  let compIndivSet = new Set(), compGestionSet = new Set(), compLeaderSet = new Set(), compProfilSet = new Set();
   for (let [key, value] of fd.entries()) {
-    if (key.includes('comp_individuelle') && key.includes('[choix]') && value) nbCompetencesIndiv++;
-    if (key.includes('comp_gestion') && key.includes('[choix]') && value) nbCompetencesGestion++;
-    if (key.includes('comp_leader') && key.includes('[choix]') && value) nbCompetencesLeader++;
-    if (key.includes('comp_profil') && key.includes('[choix]') && value) nbCompetencesProfil++;
+    // Compétences individuelles
+    if (key.startsWith('competences[individuelle_')) {
+      if ((key.endsWith('[choix]') && value) || (key.endsWith('[commentaire]') && value && value.trim() !== '')) {
+        let idx = key.match(/individuelle_(\d+)/);
+        if (idx) compIndivSet.add(idx[1]);
+      }
+    }
+    // Compétences gestion
+    if (key.startsWith('competences[gestion_')) {
+      if ((key.endsWith('[choix]') && value) || (key.endsWith('[commentaire]') && value && value.trim() !== '')) {
+        let idx = key.match(/gestion_(\d+)/);
+        if (idx) compGestionSet.add(idx[1]);
+      }
+    }
+    // Compétences leader
+    if (key.startsWith('competences[leader_')) {
+      if ((key.endsWith('[choix]') && value) || (key.endsWith('[commentaire]') && value && value.trim() !== '')) {
+        let idx = key.match(/leader_(\d+)/);
+        if (idx) compLeaderSet.add(idx[1]);
+      }
+    }
+    // Compétences profil
+    if (key.startsWith('competences[profil_')) {
+      if ((key.endsWith('[choix]') && value) || (key.endsWith('[commentaire]') && value && value.trim() !== '')) {
+        let idx = key.match(/profil_(\d+)/);
+        if (idx) compProfilSet.add(idx[1]);
+      }
+    }
   }
+  let nbCompetencesIndiv = compIndivSet.size;
+  let nbCompetencesGestion = compGestionSet.size;
+  let nbCompetencesLeader = compLeaderSet.size;
+  let nbCompetencesProfil = compProfilSet.size;
   const totalCompetences = nbCompetencesIndiv + nbCompetencesGestion + nbCompetencesLeader + nbCompetencesProfil;
-  
-  // Compter les notes d'objectifs
+
+  // Compter les notes d'objectifs : note OU commentaire
   let nbNotesObjectifs = 0;
+  let objectifsSet = new Set();
   for (let [key, value] of fd.entries()) {
-    if (key.includes('cote[') && key.includes('][note]') && value && value !== '') nbNotesObjectifs++;
+    let m = key.match(/^objectifs\[(\d+)\]\[note\]$/);
+    if (m && value && value !== '') objectifsSet.add(m[1]);
+    let m2 = key.match(/^objectifs\[(\d+)\]\[commentaire\]$/);
+    if (m2 && value && value.trim() !== '') objectifsSet.add(m2[1]);
   }
+  nbNotesObjectifs = objectifsSet.size;
   
   // Vérifier les champs du plan d'action
   const besoins = fd.get('actions[besoins_developpement]') || '';
