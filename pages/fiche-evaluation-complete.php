@@ -137,12 +137,18 @@ foreach ($competences as $c) {
 }
 
 // 4. Cotation des objectifs
+
 $cotes = [];
 try {
-  $stCote = $pdo->prepare('SELECT * FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup');
-  $stCote->execute([':fid' => $fiche_id, ':sup' => $superviseur_id]);
-  foreach ($stCote->fetchAll(PDO::FETCH_ASSOC) as $c) {
-    $cotes[(int)$c['item_id']] = $c;
+  // Pour chaque objectif, lookup direct (robuste typage)
+  foreach ($items as $it) {
+    $itemId = (int)$it['id'];
+    $stCote = $pdo->prepare('SELECT * FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup AND item_id = :itemid LIMIT 1');
+    $stCote->execute([':fid' => $fiche_id, ':sup' => $superviseur_id, ':itemid' => $itemId]);
+    $cote = $stCote->fetch(PDO::FETCH_ASSOC);
+    if ($cote) {
+      $cotes[$itemId] = $cote;
+    }
   }
 } catch (Throwable $e) {}
 
