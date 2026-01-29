@@ -39,7 +39,8 @@ $fiche_id = isset($_GET['fiche_id']) ? (int)$_GET['fiche_id'] : 0;
 if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4">Fiche non spécifiée. <a href="supervision-agent.php">Retour</a></div>'; include('../includes/footer.php'); exit; }
 
 // Charger la fiche + agent et vérifier rattachement
-$st = $pdo->prepare("SELECT o.*, a.id AS agent_id, a.nom AS agent_nom, a.post_nom AS agent_post_nom, a.fonction AS agent_fonction
+// On sélectionne aussi le champ photo de l'agent
+$st = $pdo->prepare("SELECT o.*, a.id AS agent_id, a.nom AS agent_nom, a.post_nom AS agent_post_nom, a.fonction AS agent_fonction, a.photo AS photo
                      FROM objectifs o JOIN users a ON a.id=o.user_id
                      WHERE o.id=:id AND a.superviseur_id=:sid LIMIT 1");
 $st->execute([':id'=>$fiche_id, ':sid'=>$superviseur_id]);
@@ -91,7 +92,7 @@ $resume_fields = [
   <div class="col-md-3">
     <?php include('../includes/sidebar.php'); ?>
   </div>
-  <div class="col-md-9">
+  <div class="col-md-9" style="padding-left:7.5rem;">
     <div class="container mt-4">
 
       <div class="d-flex align-items-start mb-3">
@@ -113,8 +114,12 @@ $resume_fields = [
           <div class="row g-3 align-items-center">
             <div class="col-md-8">
               <div class="d-flex align-items-center mb-2">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-                  <i class="bi bi-person-badge" style="color:#3D74B9;font-size:1.6rem"></i>
+                <?php
+                  // Récupérer la photo de l'agent (champ photo dans users)
+                  $photo = '../assets/img/profiles/' . (!empty($fiche['photo']) ? $fiche['photo'] : 'default.png');
+                ?>
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                  <img src="<?= htmlspecialchars($photo) ?>" alt="Photo" style="width:56px;height:56px;object-fit:cover;" onerror="this.onerror=null;this.src='../assets/img/profiles/default.png';">
                 </div>
                 <div>
                   <div class="fw-semibold"><?= htmlspecialchars(trim(($fiche['agent_nom'] ?? '').' '.($fiche['agent_post_nom'] ?? ''))) ?></div>
@@ -171,14 +176,38 @@ $resume_fields = [
               <?php else: ?>
                 <div class="list-group">
                   <?php foreach ($items as $idx => $it):
-                    $ae = $auto_map[(int)$it['id']] ?? null;
-                    $stateIcon = '<i class="bi bi-slash-circle" style="color:#6c757d"></i>';
-                    $stateLabel = 'Indisponible';
-                    $stateClass = 'text-muted';
-                    if ($ae && !empty($ae['note'])) {
-                      if ($ae['note']==='depasse') { $stateIcon='<i class="bi bi-arrow-up-circle-fill" style="color:#198754"></i>'; $stateLabel='Dépasse'; $stateClass='text-success'; }
-                      elseif ($ae['note']==='atteint') { $stateIcon='<i class="bi bi-dash-circle-fill" style="color:#ffc107"></i>'; $stateLabel='Atteint'; $stateClass='text-warning'; }
-                      else { $stateIcon='<i class="bi bi-arrow-down-circle-fill" style="color:#dc3545"></i>'; $stateLabel='Non atteint'; $stateClass='text-danger'; }
+                    // Lookup direct de l'auto-évaluation pour cet objectif
+                    $ae = null;
+                    try {
+                      $stmAE = $pdo->prepare('SELECT note, commentaire FROM auto_evaluation WHERE fiche_id = ? AND user_id = ? AND item_id = ? LIMIT 1');
+                      $stmAE->execute([$fiche_id, $agent_id, $it['id']]);
+                      $ae = $stmAE->fetch(PDO::FETCH_ASSOC) ?: null;
+                    } catch (Throwable $e) {}
+                    $stateIcon = '<i class="bi bi-slash-circle-fill text-secondary"></i>';
+                    $stateLabel = 'Non complété';
+                    $stateClass = 'text-secondary';
+                    if ($ae && isset($ae['note']) && $ae['note'] !== null && $ae['note'] !== '') {
+                      switch (strtolower(trim($ae['note']))) {
+                        case 'depasse':
+                          $stateIcon = '<i class="bi bi-arrow-up-circle-fill text-success"></i>';
+                          $stateLabel = 'Dépassé';
+                          $stateClass = 'text-success';
+                          break;
+                        case 'atteint':
+                          $stateIcon = '<i class="bi bi-check-circle-fill text-primary"></i>';
+                          $stateLabel = 'Atteint';
+                          $stateClass = 'text-primary';
+                          break;
+                        case 'non_atteint':
+                          $stateIcon = '<i class="bi bi-x-circle-fill text-danger"></i>';
+                          $stateLabel = 'Non atteint';
+                          $stateClass = 'text-danger';
+                          break;
+                        default:
+                          $stateIcon = '<i class="bi bi-question-circle-fill text-warning"></i>';
+                          $stateLabel = htmlspecialchars($ae['note']);
+                          $stateClass = 'text-warning';
+                      }
                     }
                   ?>
                   <div class="list-group-item border rounded-3 mb-2">
@@ -193,7 +222,7 @@ $resume_fields = [
                         <div class="small <?= $stateClass ?>"><?= htmlspecialchars($stateLabel) ?></div>
                       </div>
                     </div>
-                    <?php if ($ae && !empty($ae['commentaire'])): ?>
+                    <?php if ($ae && isset($ae['commentaire']) && $ae['commentaire'] !== null && $ae['commentaire'] !== ''): ?>
                       <div class="mt-2 p-2 bg-light rounded small"><strong>Commentaire:</strong> <?= nl2br(htmlspecialchars($ae['commentaire'])) ?></div>
                     <?php endif; ?>
                   </div>
