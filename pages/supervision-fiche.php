@@ -25,7 +25,7 @@ include('../includes/header.php');
 
 // Vérification d'accès: rôle superviseur ou coordination
 if (!isset($_SESSION['user_id']) || !in_array(($_SESSION['role'] ?? ''), ['superviseur', 'coordination'])) {
-  echo '<div class="alert alert-danger m-4">Accès refusé.</div>'; include('../includes/footer.php'); exit;
+  echo '<div class="alert alert-danger m-4"><strong>Accès refusé.</strong><br>Cette page est réservée aux rôles Superviseur et Coordination.</div>'; include('../includes/footer.php'); exit;
 }
 $superviseur_id = (int)$_SESSION['user_id'];
 
@@ -36,7 +36,7 @@ function tableExists(PDO $pdo, string $table): bool {
 }
 
 $fiche_id = isset($_GET['fiche_id']) ? (int)$_GET['fiche_id'] : 0;
-if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4">Fiche non spécifiée. <a href="supervision-agent.php">Retour</a></div>'; include('../includes/footer.php'); exit; }
+if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4"><strong>Fiche non spécifiée.</strong><br>Le paramètre fiche_id est manquant ou invalide. <a href="supervision-agent.php">Retour</a></div>'; include('../includes/footer.php'); exit; }
 
 // Charger la fiche + agent et vérifier rattachement
 // On sélectionne aussi le champ photo de l'agent
@@ -45,7 +45,7 @@ $st = $pdo->prepare("SELECT o.*, a.id AS agent_id, a.nom AS agent_nom, a.post_no
                      WHERE o.id=:id AND a.superviseur_id=:sid LIMIT 1");
 $st->execute([':id'=>$fiche_id, ':sid'=>$superviseur_id]);
 $fiche = $st->fetch(PDO::FETCH_ASSOC);
-if (!$fiche) { echo '<div class="alert alert-danger m-4">Fiche introuvable ou non autorisée. <a href="supervision-agent.php">Retour</a></div>'; include('../includes/footer.php'); exit; }
+if (!$fiche) { echo '<div class="alert alert-danger m-4"><strong>Fiche introuvable ou non autorisée.</strong><br>Soit la fiche n\'existe plus, soit l\'agent n\'est plus rattaché à votre compte superviseur. <a href="supervision-agent.php">Retour</a></div>'; include('../includes/footer.php'); exit; }
 $agent_id = (int)$fiche['agent_id'];
 
 // Préparer un token CSRF pour utilisation dans le formulaire modal inline d'évaluation

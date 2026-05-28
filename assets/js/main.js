@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-// 🔔 Ferme automatiquement les alertes Bootstrap après 5 secondes
+// 🔔 Ferme automatiquement uniquement les alertes marquées pour auto-close
 setTimeout(() => {
-  document.querySelectorAll('.alert').forEach(alert => {
+  document.querySelectorAll('.alert[data-auto-close="true"]').forEach(alert => {
     try { bootstrap.Alert.getOrCreateInstance(alert).close(); } catch(e) {}
   });
 }, 5000);

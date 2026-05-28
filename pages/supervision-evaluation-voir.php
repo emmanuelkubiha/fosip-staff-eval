@@ -9,34 +9,65 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require_once('../includes/db.php');
 include('../includes/header.php');
 
-if (!isset($_SESSION['user_id']) || (($_SESSION['role'] ?? '') !== 'superviseur' && ($_SESSION['role'] ?? '') !== 'coordination' && ($_SESSION['role'] ?? '') !== 'admin')) {
-  echo '<div class="alert alert-danger m-4">Accès refusé.</div>'; include('../includes/footer.php'); exit;
+if (!isset($_SESSION['user_id'])) {
+  echo '<div class="alert alert-danger m-4"><strong>Session expirée.</strong><br>Reconnectez-vous pour consulter cette fiche.<div class="mt-2"><a href="login.php" class="btn btn-sm btn-outline-primary">Se reconnecter</a></div></div>'; include('../includes/footer.php'); exit;
+}
+$role = $_SESSION['role'] ?? '';
+if (!in_array($role, ['superviseur', 'coordination', 'admin'], true)) {
+  echo '<div class="alert alert-danger m-4"><strong>Accès refusé.</strong><br>Cette page est réservée aux rôles Superviseur, Coordination ou Admin.</div>'; include('../includes/footer.php'); exit;
 }
 $fiche_id = isset($_GET['fiche_id']) ? (int)$_GET['fiche_id'] : 0;
-if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4">Fiche non spécifiée.</div>'; include('../includes/footer.php'); exit; }
+if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4"><strong>Fiche non spécifiée.</strong><br>Le paramètre fiche_id est manquant ou invalide.<div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à la liste</a></div></div>'; include('../includes/footer.php'); exit; }
 
 // Charger la fiche + agent + superviseur
-$st = $pdo->prepare("SELECT o.*, a.nom AS agent_nom, a.post_nom AS agent_post, a.id AS agent_id, o.superviseur_id, s.nom AS sup_nom, s.post_nom AS sup_post
+$st = $pdo->prepare("SELECT o.*, a.nom AS agent_nom, a.post_nom AS agent_post, a.id AS agent_id, a.superviseur_id AS agent_superviseur_id, o.superviseur_id, s.nom AS sup_nom, s.post_nom AS sup_post
                      FROM objectifs o
                      JOIN users a ON a.id = o.user_id
                      LEFT JOIN users s ON s.id = o.superviseur_id
                      WHERE o.id = :fid");
 $st->execute([':fid'=>$fiche_id]);
 $fiche = $st->fetch(PDO::FETCH_ASSOC);
-if (!$fiche) { echo '<div class="alert alert-danger m-4">Fiche introuvable.</div>'; include('../includes/footer.php'); exit; }
+if (!$fiche) { echo '<div class="alert alert-danger m-4"><strong>Fiche introuvable.</strong><br>Cette fiche n\'existe pas ou a été supprimée.<div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à la liste</a></div></div>'; include('../includes/footer.php'); exit; }
 $agent_id = (int)$fiche['agent_id'];
 $superviseur_id = (int)($fiche['superviseur_id'] ?? 0);
+$agent_superviseur_id = (int)($fiche['agent_superviseur_id'] ?? 0);
+if ($role === 'superviseur' && $superviseur_id !== (int)$_SESSION['user_id'] && $agent_superviseur_id !== (int)$_SESSION['user_id']) {
+  echo '<div class="alert alert-danger m-4"><strong>Vous ne pouvez pas consulter cette fiche.</strong><br>Cette fiche n\'est pas rattachée à votre compte superviseur.<div class="small mt-2 text-muted">Cause possible: réaffectation récente de l\'agent ou superviseur de fiche différent.</div><div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à mes fiches</a></div></div>'; include('../includes/footer.php'); exit;
+}
+$fiche_est_evaluee = in_array((string)($fiche['statut'] ?? ''), ['evalue', 'termine'], true);
+
+$cycle_id = null;
+$periode = trim((string)($fiche['periode'] ?? ''));
+if (preg_match('/^(\d{4})-(\d{2})$/', $periode, $m)) {
+  try {
+    $stCycle = $pdo->prepare('SELECT id FROM evaluation_cycles WHERE annee = :a AND mois = :m LIMIT 1');
+    $stCycle->execute([':a'=>(int)$m[1], ':m'=>(int)$m[2]]);
+    $rowCycle = $stCycle->fetch(PDO::FETCH_ASSOC);
+    if ($rowCycle) $cycle_id = (int)$rowCycle['id'];
+  } catch (Throwable $e) {
+    $cycle_id = null;
+  }
+}
 
 // Chargement compétences
 $comp = [];
 try {
-  $stE = $pdo->prepare("SELECT categorie, competence, point_avere, point_fort, point_a_developper, non_applicable, commentaire
-                        FROM competence_evaluation
-                        WHERE superviseur_id = :sup AND supervise_id = :agent");
-  $stE->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id]);
-  foreach ($stE->fetchAll(PDO::FETCH_ASSOC) as $r) {
-    $cat = $r['categorie']; if (!isset($comp[$cat])) $comp[$cat] = [];
-    $comp[$cat][] = $r;
+  if ($fiche_est_evaluee) {
+    if ($cycle_id !== null) {
+      $stE = $pdo->prepare("SELECT categorie, competence, point_avere, point_fort, point_a_developper, non_applicable, commentaire
+                            FROM competence_evaluation
+                            WHERE superviseur_id = :sup AND supervise_id = :agent AND cycle_id = :cycle");
+      $stE->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id, ':cycle'=>$cycle_id]);
+    } else {
+      $stE = $pdo->prepare("SELECT categorie, competence, point_avere, point_fort, point_a_developper, non_applicable, commentaire
+                            FROM competence_evaluation
+                            WHERE superviseur_id = :sup AND supervise_id = :agent AND (cycle_id IS NULL OR cycle_id = 0)");
+      $stE->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id]);
+    }
+    foreach ($stE->fetchAll(PDO::FETCH_ASSOC) as $r) {
+      $cat = $r['categorie']; if (!isset($comp[$cat])) $comp[$cat] = [];
+      $comp[$cat][] = $r;
+    }
   }
 } catch (Throwable $e) {}
 
@@ -44,13 +75,15 @@ try {
 $cotes = [];
 $avg20 = null; $pct = null;
 try {
-  $stC = $pdo->prepare("SELECT co.*, oi.contenu FROM cote_des_objectifs co JOIN objectifs_items oi ON oi.id = co.item_id WHERE co.fiche_id = :fid AND co.superviseur_id = :sup ORDER BY oi.ordre ASC, oi.id ASC");
-  $stC->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
-  $cotes = $stC->fetchAll(PDO::FETCH_ASSOC);
-  $stAvg = $pdo->prepare('SELECT AVG(note) FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup');
-  $stAvg->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
-  $avg20 = (float)$stAvg->fetchColumn();
-  if ($avg20 > 0) $pct = round($avg20 * 5);
+  if ($fiche_est_evaluee) {
+    $stC = $pdo->prepare("SELECT co.*, oi.contenu FROM cote_des_objectifs co JOIN objectifs_items oi ON oi.id = co.item_id WHERE co.fiche_id = :fid AND co.superviseur_id = :sup ORDER BY oi.ordre ASC, oi.id ASC");
+    $stC->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
+    $cotes = $stC->fetchAll(PDO::FETCH_ASSOC);
+    $stAvg = $pdo->prepare('SELECT AVG(note) FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup');
+    $stAvg->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
+    $avg20 = (float)$stAvg->fetchColumn();
+    if ($avg20 > 0) $pct = round($avg20 * 5);
+  }
 } catch (Throwable $e) {}
 
 ?>
@@ -80,6 +113,13 @@ try {
           <?php if ($avg20): ?><div><i class="bi bi-award me-1 text-success"></i>Cote moyenne: <strong><?= number_format($avg20,1) ?>/20</strong> (<?= (int)$pct ?>%)</div><?php endif; ?>
         </div>
       </div>
+
+      <?php if (!$fiche_est_evaluee): ?>
+      <div class="alert alert-info mb-3">
+        <strong>Fiche non encore évaluée.</strong><br>
+        Les sections de supervision restent volontairement vides tant que le statut de la fiche n'est pas <em>évalué</em> ou <em>terminé</em>, afin d'éviter toute confusion avec d'autres fiches.
+      </div>
+      <?php endif; ?>
 
       <div class="row g-3 mb-3">
         <div class="col-lg-7">
@@ -140,9 +180,11 @@ try {
       <?php
       $actionsReco = null;
       try {
-        $stAR = $pdo->prepare('SELECT * FROM actions_recommandations WHERE fiche_id = :fid AND superviseur_id = :sup LIMIT 1');
-        $stAR->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
-        $actionsReco = $stAR->fetch(PDO::FETCH_ASSOC);
+        if ($fiche_est_evaluee) {
+          $stAR = $pdo->prepare('SELECT * FROM actions_recommandations WHERE fiche_id = :fid AND superviseur_id = :sup LIMIT 1');
+          $stAR->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
+          $actionsReco = $stAR->fetch(PDO::FETCH_ASSOC);
+        }
       } catch (Throwable $e) {}
       ?>
       <div class="card">

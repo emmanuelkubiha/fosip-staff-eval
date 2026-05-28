@@ -48,9 +48,19 @@ $agent_id = (int)$fiche['agent_id'];
 // Vérifier rattachement
 if ((int)$fiche['sup_attendu'] !== $superviseur_id) respond(['ok'=>false,'error'=>'Vous ne pouvez pas évaluer cette fiche']);
 
-// Cycle optionnel (si fourni correctement)
+// Cycle derive de la periode de la fiche (source serveur uniquement)
 $cycle_id = null;
-if (isset($_POST['cycle_id']) && ctype_digit((string)$_POST['cycle_id'])) $cycle_id = (int)$_POST['cycle_id'];
+$periode = trim((string)($fiche['periode'] ?? ''));
+if (preg_match('/^(\d{4})-(\d{2})$/', $periode, $m)) {
+  try {
+    $stCycle = $pdo->prepare('SELECT id FROM evaluation_cycles WHERE annee = :a AND mois = :m LIMIT 1');
+    $stCycle->execute([':a'=>(int)$m[1], ':m'=>(int)$m[2]]);
+    $rowCycle = $stCycle->fetch(PDO::FETCH_ASSOC);
+    if ($rowCycle) $cycle_id = (int)$rowCycle['id'];
+  } catch (Throwable $e) {
+    $cycle_id = null;
+  }
+}
 
 // Début transaction
 $pdo->beginTransaction();
@@ -81,9 +91,14 @@ try {
 
       // Si aucun choix et pas de commentaire, ne rien enregistrer
       if ($flags['point_avere'] || $flags['point_fort'] || $flags['point_a_developper'] || $flags['non_applicable'] || $commentaire !== '') {
-        // Supprimer éventuel doublon existant (clé logique)
-        $stDel = $pdo->prepare('DELETE FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND categorie = :cat AND competence = :comp');
-        $stDel->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id, ':cat'=>$categorie, ':comp'=>$competence]);
+        // Supprimer éventuel doublon existant (clé logique avec scope cycle/periode)
+        if ($cycle_id !== null) {
+          $stDel = $pdo->prepare('DELETE FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND cycle_id = :cycle AND categorie = :cat AND competence = :comp');
+          $stDel->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id, ':cycle'=>$cycle_id, ':cat'=>$categorie, ':comp'=>$competence]);
+        } else {
+          $stDel = $pdo->prepare('DELETE FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND (cycle_id IS NULL OR cycle_id = 0) AND categorie = :cat AND competence = :comp');
+          $stDel->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id, ':cat'=>$categorie, ':comp'=>$competence]);
+        }
 
         // Insérer
         $stIns = $pdo->prepare('INSERT INTO competence_evaluation (superviseur_id, supervise_id, cycle_id, categorie, competence, point_avere, point_fort, point_a_developper, non_applicable, commentaire) VALUES (:sup, :agent, :cycle, :cat, :comp, :av, :pf, :pd, :na, :comm)');

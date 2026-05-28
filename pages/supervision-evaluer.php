@@ -53,8 +53,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 require_once('../includes/db.php');
 include('../includes/header.php');
 
-if (!isset($_SESSION['user_id']) || !in_array(($_SESSION['role'] ?? ''), ['superviseur', 'coordination'])) {
-  echo '<div class="alert alert-danger m-4">Accès refusé.</div>'; include('../includes/footer.php'); exit;
+if (!isset($_SESSION['user_id'])) {
+  echo '<div class="alert alert-danger m-4"><strong>Session expirée.</strong><br>Reconnectez-vous pour continuer.<div class="mt-2"><a href="login.php" class="btn btn-sm btn-outline-primary">Se reconnecter</a></div></div>'; include('../includes/footer.php'); exit;
+}
+if (!in_array(($_SESSION['role'] ?? ''), ['superviseur', 'coordination'], true)) {
+  echo '<div class="alert alert-danger m-4"><strong>Accès refusé.</strong><br>Cette page est réservée aux rôles Superviseur et Coordination.</div>'; include('../includes/footer.php'); exit;
 }
 $superviseur_id = (int)$_SESSION['user_id'];
 
@@ -63,17 +66,18 @@ if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_byt
 $csrf_token = $_SESSION['csrf_token'];
 
 $fiche_id = isset($_GET['fiche_id']) ? (int)$_GET['fiche_id'] : 0;
-if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4">Fiche non spécifiée.</div>'; include('../includes/footer.php'); exit; }
+if ($fiche_id <= 0) { echo '<div class="alert alert-warning m-4"><strong>Fiche non spécifiée.</strong><br>Le paramètre fiche_id est manquant ou invalide.<div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à la liste</a></div></div>'; include('../includes/footer.php'); exit; }
 
 // Charger la fiche et vérifier rattachement superviseur
 $stF = $pdo->prepare('SELECT o.*, u.id AS agent_id, u.nom AS agent_nom, u.post_nom AS agent_post_nom, u.fonction AS agent_fonction, u.superviseur_id AS agent_superviseur FROM objectifs o JOIN users u ON u.id=o.user_id WHERE o.id=:fid LIMIT 1');
 $stF->execute([':fid'=>$fiche_id]);
 $fiche = $stF->fetch(PDO::FETCH_ASSOC);
-if (!$fiche) { echo '<div class="alert alert-danger m-4">Fiche introuvable.</div>'; include('../includes/footer.php'); exit; }
+if (!$fiche) { echo '<div class="alert alert-danger m-4"><strong>Fiche introuvable.</strong><br>Cette fiche n\'existe pas ou a été supprimée.<div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à la liste</a></div></div>'; include('../includes/footer.php'); exit; }
 $agent_id = (int)$fiche['agent_id'];
 if ((int)$fiche['agent_superviseur'] !== $superviseur_id && (int)$fiche['superviseur_id'] !== $superviseur_id) {
-  echo '<div class="alert alert-danger m-4">Vous ne pouvez pas évaluer cette fiche.</div>'; include('../includes/footer.php'); exit;
+  echo '<div class="alert alert-danger m-4"><strong>Vous ne pouvez pas évaluer cette fiche.</strong><br>Cette fiche n\'est pas rattachée à votre compte superviseur.<div class="small mt-2 text-muted">Cause possible: réaffectation récente de l\'agent ou superviseur de fiche différent.</div><div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à mes fiches</a></div></div>'; include('../includes/footer.php'); exit;
 }
+$fiche_est_evaluee = in_array((string)($fiche['statut'] ?? ''), ['evalue', 'termine'], true);
 
 // Cycle (optionnel)
 $periode = trim((string)$fiche['periode']);
@@ -109,11 +113,18 @@ try {
 // Chargement des évaluations existantes (competence_evaluation)
 $eval_map = []; // key = categorie|competence (normalisée) => row
 try {
-  $stE = $pdo->prepare('SELECT * FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND categorie IN ("individuelle","gestion","leader","profil")');
-  $stE->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id]);
-  foreach($stE->fetchAll(PDO::FETCH_ASSOC) as $r) {
-    $key = strtolower($r['categorie'].'|'.trim($r['competence']));
-    $eval_map[$key] = $r;
+  if ($fiche_est_evaluee) {
+    if ($cycle_id !== null) {
+      $stE = $pdo->prepare('SELECT * FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND cycle_id = :cycle AND categorie IN ("individuelle","gestion","leader","profil")');
+      $stE->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id, ':cycle'=>$cycle_id]);
+    } else {
+      $stE = $pdo->prepare('SELECT * FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND (cycle_id IS NULL OR cycle_id = 0) AND categorie IN ("individuelle","gestion","leader","profil")');
+      $stE->execute([':sup'=>$superviseur_id, ':agent'=>$agent_id]);
+    }
+    foreach($stE->fetchAll(PDO::FETCH_ASSOC) as $r) {
+      $key = strtolower($r['categorie'].'|'.trim($r['competence']));
+      $eval_map[$key] = $r;
+    }
   }
 } catch(Throwable $e) {}
 
@@ -142,9 +153,11 @@ try {
 // Cotations existantes cote_des_objectifs
 $cotes_map = []; // key = item_id => row
 try {
-  $stCote = $pdo->prepare('SELECT * FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup');
-  $stCote->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
-  foreach($stCote->fetchAll(PDO::FETCH_ASSOC) as $r){ $cotes_map[(int)$r['item_id']] = $r; }
+  if ($fiche_est_evaluee) {
+    $stCote = $pdo->prepare('SELECT * FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup');
+    $stCote->execute([':fid'=>$fiche_id, ':sup'=>$superviseur_id]);
+    foreach($stCote->fetchAll(PDO::FETCH_ASSOC) as $r){ $cotes_map[(int)$r['item_id']] = $r; }
+  }
 } catch(Throwable $e) {}
 
 function renderRadioOptions($namePrefix, $existing){
@@ -261,7 +274,7 @@ function renderRadioOptions($namePrefix, $existing){
       <!-- Mode d'emploi -->
       <div class="alert alert-info mb-4">
         <i class="bi bi-info-circle me-2"></i>
-        <strong>Mode d'emploi :</strong> Complétez les 3 sections ci-dessous. Sélectionnez une option pour chaque compétence, donnez une note sur 20 pour chaque objectif, puis détaillez le plan d'action. Cliquez sur "Enregistrer tout" en bas de page.
+        <strong>Mode d'emploi :</strong> Complétez les 3 sections ci-dessous. Sélectionnez une option pour chaque compétence, donnez une note sur 20 pour chaque objectif, puis détaillez le plan d'action. Cliquez sur "Sauvegarder" en bas de page.
       </div>
 
       <form id="formEvaluation" class="mb-5">
@@ -605,7 +618,7 @@ function renderRadioOptions($namePrefix, $existing){
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <div>
                 <button type="button" id="btnSaveAll" class="btn btn-primary">
-                  <i class="bi bi-save me-1"></i> Enregistrer
+                  <i class="bi bi-save me-1"></i> Sauvegarder
                 </button>
                 <a href="fiche-evaluation-complete.php?fiche_id=<?= (int)$fiche_id ?>" class="btn btn-outline-info">
                   <i class="bi bi-eye me-1"></i> Voir
@@ -791,7 +804,7 @@ document.getElementById('btnSaveAll')?.addEventListener('click', function() {
         btn.innerHTML = originalHTML;
         if(data.ok){
           formModified = false; // Réinitialiser le flag
-          showToast('success', 'Évaluation enregistrée avec succès', 'bi-check-circle-fill');
+          showToast('success', 'Évaluation sauvegardée avec succès', 'bi-check-circle-fill');
           // Suppression du reload automatique pour laisser l'affichage visible
         } else {
           showToast('danger', 'Erreur : '+ (data.error || 'Enregistrement échoué'), 'bi-exclamation-triangle-fill');
