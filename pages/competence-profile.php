@@ -8,8 +8,6 @@
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 require_once __DIR__ . '/../includes/db.php';
-$current_page = 'competences-profile';
-include __DIR__ . '/../includes/header.php';
 
 // ensure CSRF token exists
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
@@ -97,6 +95,11 @@ $competences = $st->fetchAll(PDO::FETCH_ASSOC);
 
 // get flash for JS to show toast
 $flash = get_flash();
+
+// ⚠️ IMPORTANT : Inclure header.php APRÈS le traitement POST
+// Sinon : "Cannot modify header information - headers already sent"
+$current_page = 'competences-profile';
+include __DIR__ . '/../includes/header.php';
 ?>
 
 <style>
