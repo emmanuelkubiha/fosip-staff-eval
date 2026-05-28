@@ -40,7 +40,7 @@ include('../includes/header.php');
 
 // Auth : superviseur, coordination ou admin
 if (!isset($_SESSION['user_id'])) {
-  echo '<div class="alert alert-danger m-4">Accès refusé.</div>'; 
+  echo '<div class="alert alert-danger m-4"><strong>Session expirée.</strong><br>Reconnectez-vous pour consulter cette fiche.<div class="mt-2"><a href="login.php" class="btn btn-sm btn-outline-primary">Se reconnecter</a></div></div>'; 
   include('../includes/footer.php'); 
   exit;
 }
@@ -49,14 +49,14 @@ $role = $_SESSION['role'] ?? '';
 $user_id = (int)$_SESSION['user_id'];
 
 if (!in_array($role, ['superviseur', 'coordination', 'admin'])) {
-  echo '<div class="alert alert-danger m-4">Vous n\'avez pas les permissions pour accéder à cette page.</div>'; 
+  echo '<div class="alert alert-danger m-4"><strong>Accès refusé.</strong><br>Cette page est réservée aux rôles Superviseur, Coordination ou Admin.</div>'; 
   include('../includes/footer.php'); 
   exit;
 }
 
 $fiche_id = isset($_GET['fiche_id']) ? (int)$_GET['fiche_id'] : 0;
 if ($fiche_id <= 0) {
-  echo '<div class="alert alert-warning m-4">Fiche non spécifiée.</div>'; 
+  echo '<div class="alert alert-warning m-4"><strong>Fiche non spécifiée.</strong><br>Le paramètre fiche_id est manquant ou invalide.<div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à la liste</a></div></div>'; 
   include('../includes/footer.php'); 
   exit;
 }
@@ -65,7 +65,7 @@ if ($fiche_id <= 0) {
 $stF = $pdo->prepare('
   SELECT o.*, 
          u.id AS agent_id, u.nom AS agent_nom, u.post_nom AS agent_post_nom, 
-         u.fonction AS agent_fonction, u.email AS agent_email,
+    u.fonction AS agent_fonction, u.email AS agent_email, u.superviseur_id AS agent_superviseur_id,
          sup.nom AS superviseur_nom, sup.post_nom AS superviseur_post_nom,
          sup.email AS superviseur_email
   FROM objectifs o
@@ -78,7 +78,7 @@ $stF->execute([':fid' => $fiche_id]);
 $fiche = $stF->fetch(PDO::FETCH_ASSOC);
 
 if (!$fiche) {
-  echo '<div class="alert alert-danger m-4">Fiche introuvable.</div>'; 
+  echo '<div class="alert alert-danger m-4"><strong>Fiche introuvable.</strong><br>Cette fiche n\'existe pas ou a été supprimée.<div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à la liste</a></div></div>'; 
   include('../includes/footer.php'); 
   exit;
 }
@@ -86,10 +86,25 @@ if (!$fiche) {
 $agent_id = (int)$fiche['agent_id'];
 $superviseur_id = (int)$fiche['superviseur_id'];
 $periode = $fiche['periode'];
+$fiche_est_evaluee = in_array((string)($fiche['statut'] ?? ''), ['evalue', 'termine'], true);
+
+$cycle_id = null;
+if (preg_match('/^(\d{4})-(\d{2})$/', trim((string)$periode), $m)) {
+  try {
+    $stCycle = $pdo->prepare('SELECT id FROM evaluation_cycles WHERE annee = :a AND mois = :m LIMIT 1');
+    $stCycle->execute([':a'=>(int)$m[1], ':m'=>(int)$m[2]]);
+    $rowCycle = $stCycle->fetch(PDO::FETCH_ASSOC);
+    if ($rowCycle) $cycle_id = (int)$rowCycle['id'];
+  } catch (Throwable $e) {
+    $cycle_id = null;
+  }
+}
 
 // Vérification des droits si superviseur
-if ($role === 'superviseur' && $superviseur_id !== $user_id) {
-  echo '<div class="alert alert-danger m-4">Vous ne pouvez pas consulter cette fiche.</div>'; 
+if ($role === 'superviseur'
+    && $superviseur_id !== $user_id
+    && (int)($fiche['agent_superviseur_id'] ?? 0) !== $user_id) {
+  echo '<div class="alert alert-danger m-4"><strong>Vous ne pouvez pas consulter cette fiche.</strong><br>Cette fiche n\'est pas rattachée à votre compte superviseur.<div class="small mt-2 text-muted">Cause possible: réaffectation récente de l\'agent ou superviseur de fiche différent.</div><div class="mt-2"><a href="supervision-agent.php" class="btn btn-sm btn-outline-secondary">Retour à mes fiches</a></div></div>'; 
   include('../includes/footer.php'); 
   exit;
 }
@@ -117,9 +132,16 @@ try {
 // 3. Compétences évaluées par le superviseur
 $competences = [];
 try {
-  $stComp = $pdo->prepare('SELECT * FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent ORDER BY categorie, id');
-  $stComp->execute([':sup' => $superviseur_id, ':agent' => $agent_id]);
-  $competences = $stComp->fetchAll(PDO::FETCH_ASSOC);
+  if ($fiche_est_evaluee) {
+    if ($cycle_id !== null) {
+      $stComp = $pdo->prepare('SELECT * FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND cycle_id = :cycle ORDER BY categorie, id');
+      $stComp->execute([':sup' => $superviseur_id, ':agent' => $agent_id, ':cycle' => $cycle_id]);
+    } else {
+      $stComp = $pdo->prepare('SELECT * FROM competence_evaluation WHERE superviseur_id = :sup AND supervise_id = :agent AND (cycle_id IS NULL OR cycle_id = 0) ORDER BY categorie, id');
+      $stComp->execute([':sup' => $superviseur_id, ':agent' => $agent_id]);
+    }
+    $competences = $stComp->fetchAll(PDO::FETCH_ASSOC);
+  }
 } catch (Throwable $e) {}
 
 // Grouper par catégorie
@@ -140,14 +162,16 @@ foreach ($competences as $c) {
 
 $cotes = [];
 try {
-  // Pour chaque objectif, lookup direct (robuste typage)
-  foreach ($items as $it) {
-    $itemId = (int)$it['id'];
-    $stCote = $pdo->prepare('SELECT * FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup AND item_id = :itemid LIMIT 1');
-    $stCote->execute([':fid' => $fiche_id, ':sup' => $superviseur_id, ':itemid' => $itemId]);
-    $cote = $stCote->fetch(PDO::FETCH_ASSOC);
-    if ($cote) {
-      $cotes[$itemId] = $cote;
+  if ($fiche_est_evaluee) {
+    // Pour chaque objectif, lookup direct (robuste typage)
+    foreach ($items as $it) {
+      $itemId = (int)$it['id'];
+      $stCote = $pdo->prepare('SELECT * FROM cote_des_objectifs WHERE fiche_id = :fid AND superviseur_id = :sup AND item_id = :itemid LIMIT 1');
+      $stCote->execute([':fid' => $fiche_id, ':sup' => $superviseur_id, ':itemid' => $itemId]);
+      $cote = $stCote->fetch(PDO::FETCH_ASSOC);
+      if ($cote) {
+        $cotes[$itemId] = $cote;
+      }
     }
   }
 } catch (Throwable $e) {}
@@ -167,17 +191,21 @@ $moyennePourcent = $moyenneNote !== null ? round($moyenneNote * 5) : null;
 // 5. Actions et recommandations
 $actions = null;
 try {
-  $stAct = $pdo->prepare('SELECT * FROM actions_recommandations WHERE fiche_id = :fid AND superviseur_id = :sup LIMIT 1');
-  $stAct->execute([':fid' => $fiche_id, ':sup' => $superviseur_id]);
-  $actions = $stAct->fetch(PDO::FETCH_ASSOC);
+  if ($fiche_est_evaluee) {
+    $stAct = $pdo->prepare('SELECT * FROM actions_recommandations WHERE fiche_id = :fid AND superviseur_id = :sup LIMIT 1');
+    $stAct->execute([':fid' => $fiche_id, ':sup' => $superviseur_id]);
+    $actions = $stAct->fetch(PDO::FETCH_ASSOC);
+  }
 } catch (Throwable $e) {}
 
 // 6. Supervision (commentaire général et statut)
 $supervision = null;
 try {
-  $stSup = $pdo->prepare('SELECT * FROM supervisions WHERE agent_id = :agent AND superviseur_id = :sup AND periode = :per LIMIT 1');
-  $stSup->execute([':agent' => $agent_id, ':sup' => $superviseur_id, ':per' => $periode]);
-  $supervision = $stSup->fetch(PDO::FETCH_ASSOC);
+  if ($fiche_est_evaluee) {
+    $stSup = $pdo->prepare('SELECT * FROM supervisions WHERE agent_id = :agent AND superviseur_id = :sup AND periode = :per LIMIT 1');
+    $stSup->execute([':agent' => $agent_id, ':sup' => $superviseur_id, ':per' => $periode]);
+    $supervision = $stSup->fetch(PDO::FETCH_ASSOC);
+  }
 } catch (Throwable $e) {}
 
 // 7. Commentaire final coordination (nouvelle table coordination_commentaires)
@@ -483,6 +511,65 @@ $superviseur_photo_path = $profile_base . htmlspecialchars($superviseur_photo);
               </div>
             <?php endif; ?>
           <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- ===================== SECTION 2B : RÉSUMÉS DE L'EMPLOYÉ ===================== -->
+      <div class="card shadow-sm mb-4" style="border-left: 4px solid #3D74B9;">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i> Résumés de l'Employé</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card bg-light h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-check2-circle me-2"></i> Réussites</h6>
+                  <p class="mb-0"><?= !empty($fiche['resume_reussite']) ? nl2br(htmlspecialchars($fiche['resume_reussite'])) : '<em class="text-muted">Non renseigné</em>' ?></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-arrow-repeat me-2"></i> Améliorations</h6>
+                  <p class="mb-0"><?= !empty($fiche['resume_amelioration']) ? nl2br(htmlspecialchars($fiche['resume_amelioration'])) : '<em class="text-muted">Non renseigné</em>' ?></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-exclamation-triangle me-2"></i> Problèmes</h6>
+                  <p class="mb-0"><?= !empty($fiche['resume_problemes']) ? nl2br(htmlspecialchars($fiche['resume_problemes'])) : '<em class="text-muted">Non renseigné</em>' ?></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-person-up me-2"></i> Compétences à développer</h6>
+                  <p class="mb-0"><?= !empty($fiche['resume_competence_a_developper']) ? nl2br(htmlspecialchars($fiche['resume_competence_a_developper'])) : '<em class="text-muted">Non renseigné</em>' ?></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-person-check me-2"></i> Compétences à utiliser</h6>
+                  <p class="mb-0"><?= !empty($fiche['resume_competence_a_utiliser']) ? nl2br(htmlspecialchars($fiche['resume_competence_a_utiliser'])) : '<em class="text-muted">Non renseigné</em>' ?></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-life-preserver me-2"></i> Soutien attendu</h6>
+                  <p class="mb-0"><?= !empty($fiche['resume_soutien']) ? nl2br(htmlspecialchars($fiche['resume_soutien'])) : '<em class="text-muted">Non renseigné</em>' ?></p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
